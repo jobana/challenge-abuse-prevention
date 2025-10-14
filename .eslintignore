@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+out/
+
+# Documentation
+documentation/
+
+# Generated files
+*.d.ts
+*.js.map
+
+# Test coverage
+coverage/
+
+# Cache directories
+.cache/
+.parcel-cache/
+.vite/
+
+# Temporary files
+tmp/
+temp/
