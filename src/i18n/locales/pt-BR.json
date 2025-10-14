@@ -13,46 +13,71 @@
     "close": "Fechar",
     "retry": "Tentar novamente"
   },
-  "verification": {
+  "form": {
+    "ariaLabel": "Formulário de verificação de dados",
     "title": "Verificação de Dados",
-    "subtitle": "Por favor, revise e confirme suas informações antes de continuar",
-    "form": {
+    "description": "Por favor, complete as informações solicitadas para continuar com a verificação.",
+    "fields": {
       "name": {
         "label": "Nome completo",
-        "placeholder": "Digite seu nome completo",
-        "required": "O nome é obrigatório",
-        "invalid": "Digite um nome válido"
+        "placeholder": "Digite seu nome completo"
       },
       "country": {
         "label": "País",
         "placeholder": "Selecione seu país",
-        "required": "Você deve selecionar um país",
-        "search": "Buscar país..."
+        "loading": "Carregando países...",
+        "error": "Erro ao carregar países"
       },
       "address": {
         "label": "Endereço",
-        "placeholder": "Digite seu endereço completo",
-        "required": "O endereço é obrigatório",
-        "invalid": "Digite um endereço válido"
+        "placeholder": "Digite seu endereço completo"
       }
     },
-    "captcha": {
-      "label": "Verificação de segurança",
-      "required": "Você deve completar a verificação de segurança",
-      "loading": "Carregando verificação...",
-      "error": "Erro ao carregar a verificação"
-    },
-    "submit": {
-      "button": "Verificar e Continuar",
-      "loading": "Verificando...",
-      "success": "Verificação concluída com sucesso",
-      "error": "Erro ao verificar os dados"
-    },
     "validation": {
-      "required": "Este campo é obrigatório",
-      "invalid": "Formato inválido",
-      "minLength": "Deve ter pelo menos {{min}} caracteres",
-      "maxLength": "Não pode ter mais de {{max}} caracteres"
+      "name": {
+        "required": "O nome é obrigatório",
+        "minLength": "O nome deve ter pelo menos 2 caracteres",
+        "maxLength": "O nome não pode exceder 100 caracteres",
+        "invalid": "O nome só pode conter letras e espaços"
+      },
+      "country": {
+        "required": "Você deve selecionar um país"
+      },
+      "address": {
+        "required": "O endereço é obrigatório",
+        "minLength": "O endereço deve ter pelo menos 10 caracteres",
+        "maxLength": "O endereço não pode exceder 200 caracteres"
+      }
+    },
+    "actions": {
+      "submit": "Verificar Dados",
+      "submitting": "Verificando...",
+      "reset": "Limpar Formulário"
+    },
+    "errors": {
+      "captchaRequired": "Você deve completar a verificação CAPTCHA",
+      "submitFailed": "Erro ao enviar o formulário. Tente novamente."
+    },
+    "success": {
+      "title": "Verificação Bem-sucedida!",
+      "message": "Seus dados foram verificados corretamente. Você receberá uma confirmação por email.",
+      "newVerification": "Nova Verificação"
+    },
+    "footer": {
+      "privacy": "Seus dados estão protegidos e são usados apenas para verificação.",
+      "required": "Os campos marcados com * são obrigatórios."
+    }
+  },
+  "captcha": {
+    "language": "pt",
+    "ariaLabel": "Verificação de segurança reCAPTCHA",
+    "loading": "Carregando verificação de segurança...",
+    "errors": {
+      "loadFailed": "Erro ao carregar a verificação de segurança",
+      "verificationFailed": "Erro na verificação de segurança",
+      "notLoaded": "A verificação de segurança não está disponível",
+      "noToken": "Não foi possível obter o token de verificação",
+      "executionFailed": "Erro ao executar a verificação de segurança"
     }
   },
   "countries": {

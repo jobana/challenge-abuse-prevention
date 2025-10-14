@@ -1,41 +1,58 @@
 import React from 'react';
-import ReactDOMServer from 'react-dom/server';
+import { renderToString } from 'react-dom/server';
+import { StaticRouter } from 'react-router-dom/server';
 import { App } from './App';
-import { logger } from '@utils/logger';
+import { logger } from './utils/logger';
 
-export async function render(url: string, initialData?: any) {
+interface RenderOptions {
+  url: string;
+  initialData?: any;
+  performanceConfig?: any;
+}
+
+export function render({ url, initialData, performanceConfig }: RenderOptions) {
   const startTime = Date.now();
   
   try {
-    // Renderizar la aplicación con datos iniciales
-    const html = ReactDOMServer.renderToString(
-      React.createElement(App, { initialData })
+    const html = renderToString(
+      <StaticRouter location={url}>
+        <App 
+          initialData={initialData}
+          performanceConfig={performanceConfig}
+        />
+      </StaticRouter>
     );
     
     const renderTime = Date.now() - startTime;
     
-    // Log de performance
-    if (renderTime > 500) {
-      logger.warn(`Slow SSR render: ${renderTime}ms`);
-    } else {
-      logger.info(`SSR render completed in ${renderTime}ms`);
-    }
+    logger.info('SSR render completed', {
+      url,
+      renderTime,
+      htmlLength: html.length
+    });
     
-    return html;
-    
+    return {
+      html,
+      renderTime,
+      initialData,
+      performanceConfig
+    };
   } catch (error) {
-    logger.error('SSR render error:', error);
+    const renderTime = Date.now() - startTime;
+    
+    logger.error('SSR render failed', {
+      url,
+      renderTime,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     // Fallback HTML en caso de error
-    return `
-      <div style="padding: 20px; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;">
-        <h2>Error de carga</h2>
-        <p>Estamos experimentando problemas técnicos.</p>
-        <p>Por favor, intenta recargar la página.</p>
-        <button onclick="window.location.reload()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-          Recargar
-        </button>
-      </div>
-    `;
+    return {
+      html: '<div id="root"><div class="error">Error loading application</div></div>',
+      renderTime,
+      initialData,
+      performanceConfig,
+      error: true
+    };
   }
 }

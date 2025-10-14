@@ -4,6 +4,13 @@ import { resolve } from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  css: {
+    preprocessorOptions: {
+      scss: {
+        additionalData: `@import "./src/styles/variables.scss";`
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),

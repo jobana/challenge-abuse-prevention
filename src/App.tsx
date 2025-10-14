@@ -1,9 +1,9 @@
 import React, { Suspense, ErrorBoundary } from 'react';
-import { VerificationForm } from '@components/forms/VerificationForm';
-import { ErrorFallback } from '@components/ui/ErrorFallback';
-import { LoadingSpinner } from '@components/ui/LoadingSpinner';
-import { useI18n } from '@hooks/useI18n';
-import '@styles/globals.scss';
+import { VerificationForm } from './components/VerificationForm';
+import { ErrorFallback } from './components/ui/ErrorFallback';
+import { LoadingSpinner } from './components/ui/LoadingSpinner';
+import { useI18n } from './hooks/useI18n';
+import './styles/globals.scss';
 
 interface AppProps {
   initialData?: {
@@ -56,10 +56,10 @@ export const App: React.FC<AppProps> = ({
         <header className="app-header">
           <div className="app-header__content">
             <h1 className="app-header__title">
-              {t('verification.title')}
+              {t('form.title')}
             </h1>
             <p className="app-header__subtitle">
-              {t('verification.subtitle')}
+              {t('form.description')}
             </p>
           </div>
         </header>
@@ -73,10 +73,7 @@ export const App: React.FC<AppProps> = ({
               </div>
             }
           >
-            <VerificationForm 
-              initialData={initialData}
-              performanceConfig={performanceConfig}
-            />
+            <VerificationForm />
           </Suspense>
         </main>
 

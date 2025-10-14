@@ -6,6 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "server": "ts-node --esm src/server.ts",
+    "server:dev": "ts-node --esm --watch src/server.ts",
+    "start": "npm run build && npm run server",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -26,7 +29,8 @@
     "react-google-recaptcha": "^3.1.0",
     "react-hook-form": "^7.52.1",
     "react-i18next": "^15.0.1",
-    "react-router-dom": "^6.26.2"
+    "react-router-dom": "^6.26.2",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@axe-core/react": "^4.10.2",
