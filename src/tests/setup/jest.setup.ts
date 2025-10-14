@@ -1,4 +1,8 @@
 import '@testing-library/jest-dom';
+import { toHaveNoViolations } from 'jest-axe';
+
+// Extender expect con axe-core
+expect.extend(toHaveNoViolations);
 
 // Mock de window.matchMedia
 Object.defineProperty(window, 'matchMedia', {

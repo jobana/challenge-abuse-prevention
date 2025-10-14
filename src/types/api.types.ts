@@ -1,6 +1,62 @@
 import { VerificationData, VerificationFormData } from './verification.types';
 import { ApiResponse, ApiError } from './common.types';
 
+// Tipos para meli-countries API
+export interface Country {
+  id: string;
+  name: string;
+  code: string;
+  flag: string;
+  currency: string;
+  timezone: string;
+  locale: string;
+}
+
+export interface CountriesResponse extends ApiResponse<Country[]> {
+  data: Country[];
+}
+
+// Tipos para meli-users API
+export interface User {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  address?: UserAddress;
+  preferences: UserPreferences;
+}
+
+export interface UserAddress {
+  street: string;
+  number: string;
+  apartment?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
+
+export interface UserPreferences {
+  language: string;
+  currency: string;
+  notifications: boolean;
+}
+
+export interface UserResponse extends ApiResponse<User> {
+  data: User;
+}
+
+// Tipos para CAPTCHA
+export interface CaptchaResponse {
+  success: boolean;
+  score?: number;
+  action?: string;
+  challenge_ts?: string;
+  hostname?: string;
+  'error-codes'?: string[];
+}
+
 export interface CustomerApiResponse extends ApiResponse<any> {
   data: {
     customer: any;

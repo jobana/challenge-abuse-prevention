@@ -1,0 +1,100 @@
+{
+  "common": {
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "cancel": "Cancelar",
+    "continue": "Continuar",
+    "back": "Volver",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "retry": "Reintentar"
+  },
+  "verification": {
+    "title": "Verificación de Datos",
+    "subtitle": "Por favor, revisa y confirma tu información antes de continuar",
+    "form": {
+      "name": {
+        "label": "Nombre completo",
+        "placeholder": "Ingresa tu nombre completo",
+        "required": "El nombre es obligatorio",
+        "invalid": "Ingresa un nombre válido"
+      },
+      "country": {
+        "label": "País",
+        "placeholder": "Selecciona tu país",
+        "required": "Debes seleccionar un país",
+        "search": "Buscar país..."
+      },
+      "address": {
+        "label": "Dirección",
+        "placeholder": "Ingresa tu dirección completa",
+        "required": "La dirección es obligatoria",
+        "invalid": "Ingresa una dirección válida"
+      }
+    },
+    "captcha": {
+      "label": "Verificación de seguridad",
+      "required": "Debes completar la verificación de seguridad",
+      "loading": "Cargando verificación...",
+      "error": "Error al cargar la verificación"
+    },
+    "submit": {
+      "button": "Verificar y Continuar",
+      "loading": "Verificando...",
+      "success": "Verificación completada exitosamente",
+      "error": "Error al verificar los datos"
+    },
+    "validation": {
+      "required": "Este campo es obligatorio",
+      "invalid": "Formato inválido",
+      "minLength": "Debe tener al menos {{min}} caracteres",
+      "maxLength": "No puede tener más de {{max}} caracteres"
+    }
+  },
+  "countries": {
+    "AR": "Argentina",
+    "BR": "Brasil",
+    "MX": "México",
+    "CO": "Colombia",
+    "CL": "Chile",
+    "PE": "Perú",
+    "UY": "Uruguay",
+    "PY": "Paraguay",
+    "BO": "Bolivia",
+    "EC": "Ecuador",
+    "VE": "Venezuela",
+    "CR": "Costa Rica",
+    "PA": "Panamá",
+    "GT": "Guatemala",
+    "HN": "Honduras",
+    "SV": "El Salvador",
+    "NI": "Nicaragua",
+    "CU": "Cuba",
+    "DO": "República Dominicana",
+    "PR": "Puerto Rico"
+  },
+  "errors": {
+    "network": "Error de conexión. Verifica tu internet",
+    "server": "Error del servidor. Intenta nuevamente",
+    "timeout": "La operación tardó demasiado. Intenta nuevamente",
+    "generic": "Ha ocurrido un error inesperado",
+    "validation": "Por favor, corrige los errores en el formulario",
+    "captcha": "Error en la verificación de seguridad"
+  },
+  "security": {
+    "secure_connection": "Conexión segura",
+    "data_protected": "Tus datos están protegidos",
+    "ssl_encrypted": "Conexión encriptada SSL",
+    "privacy_policy": "Política de Privacidad",
+    "terms_conditions": "Términos y Condiciones"
+  },
+  "noscript": {
+    "title": "Verificación de Datos",
+    "message": "Para continuar, habilita JavaScript en tu navegador.",
+    "support": "Si tienes problemas, contacta soporte."
+  }
+}

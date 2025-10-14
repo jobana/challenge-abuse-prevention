@@ -1,0 +1,252 @@
+@import '../../styles/variables';
+
+.input__container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.input__label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-gray-700);
+  line-height: 1.25rem;
+}
+
+.input__required {
+  color: var(--color-danger);
+  margin-left: 0.25rem;
+}
+
+.input__wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.375rem;
+  font-size: 1rem;
+  line-height: 1.5rem;
+  color: var(--color-gray-900);
+  background-color: var(--color-white);
+  transition: all 0.2s ease-in-out;
+  outline: none;
+  
+  &::placeholder {
+    color: var(--color-gray-400);
+  }
+  
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+  
+  &:hover:not(:disabled):not(:focus) {
+    border-color: var(--color-gray-400);
+  }
+}
+
+// Variantes
+.input--default {
+  // Estilos por defecto ya aplicados arriba
+}
+
+.input--filled {
+  background-color: var(--color-gray-50);
+  border-color: transparent;
+  
+  &:focus {
+    background-color: var(--color-white);
+    border-color: var(--color-primary);
+  }
+  
+  &:hover:not(:disabled):not(:focus) {
+    background-color: var(--color-gray-100);
+  }
+}
+
+.input--outlined {
+  background-color: transparent;
+  border-width: 2px;
+  
+  &:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+  }
+}
+
+// Estados
+.input--error {
+  border-color: var(--color-danger);
+  
+  &:focus {
+    border-color: var(--color-danger);
+    box-shadow: 0 0 0 3px var(--color-danger-light);
+  }
+}
+
+.input--disabled {
+  background-color: var(--color-gray-50);
+  color: var(--color-gray-500);
+  cursor: not-allowed;
+  
+  &::placeholder {
+    color: var(--color-gray-400);
+  }
+}
+
+.input--loading {
+  padding-right: 2.5rem;
+}
+
+.input--full-width {
+  width: 100%;
+}
+
+// Iconos
+.input--with-left-icon {
+  padding-left: 2.5rem;
+}
+
+.input--with-right-icon {
+  padding-right: 2.5rem;
+}
+
+.input__icon {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--color-gray-400);
+  pointer-events: none;
+  
+  &[data-position="left"] {
+    left: 0.75rem;
+  }
+  
+  &[data-position="right"] {
+    right: 0.75rem;
+  }
+}
+
+// Loading spinner
+.input__loading {
+  position: absolute;
+  top: 50%;
+  right: 0.75rem;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-gray-400);
+}
+
+.input__loading__icon {
+  width: 1rem;
+  height: 1rem;
+  animation: spin 1s linear infinite;
+}
+
+.input__loading__circle {
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+// Mensajes
+.input__error {
+  font-size: 0.875rem;
+  color: var(--color-danger);
+  line-height: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  &::before {
+    content: '⚠️';
+    font-size: 0.75rem;
+  }
+}
+
+.input__helper {
+  font-size: 0.875rem;
+  color: var(--color-gray-500);
+  line-height: 1.25rem;
+}
+
+// Animaciones
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .input {
+    padding: 0.625rem 0.875rem;
+    font-size: 0.9375rem;
+  }
+  
+  .input--with-left-icon {
+    padding-left: 2.25rem;
+  }
+  
+  .input--with-right-icon {
+    padding-right: 2.25rem;
+  }
+  
+  .input--loading {
+    padding-right: 2.25rem;
+  }
+  
+  .input__icon {
+    width: 1rem;
+    height: 1rem;
+    
+    &[data-position="left"] {
+      left: 0.625rem;
+    }
+    
+    &[data-position="right"] {
+      right: 0.625rem;
+    }
+  }
+  
+  .input__loading {
+    right: 0.625rem;
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+  
+  .input__loading__icon {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+}
