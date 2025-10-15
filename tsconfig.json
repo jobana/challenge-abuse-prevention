@@ -28,6 +28,14 @@
       "@styles/*": ["src/styles/*"]
     }
   },
-  "include": ["src", "src/**/*.d.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.d.ts",
+    "build"
+  ]
 }

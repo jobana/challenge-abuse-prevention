@@ -1,5 +1,4 @@
 import React, { forwardRef } from 'react';
-import styles from './Input.module.scss';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -41,31 +40,25 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     const describedBy = [errorId, helperId].filter(Boolean).join(' ') || undefined;
 
     const inputClasses = [
-      styles.input,
-      styles[`input--${variant}`],
-      error && styles['input--error'],
-      disabled && styles['input--disabled'],
-      loading && styles['input--loading'],
-      fullWidth && styles['input--full-width'],
-      leftIcon && styles['input--with-left-icon'],
-      rightIcon && styles['input--with-right-icon'],
+      'input__field',
+      error && ' message--error',
       className,
     ]
       .filter(Boolean)
       .join(' ');
 
     return (
-      <div className={styles.input__container}>
+      <div className="input__container">
         {label && (
-          <label htmlFor={inputId} className={styles.input__label}>
+          <label htmlFor={inputId} className="input__label">
             {label}
-            {required && <span className={styles.input__required}>*</span>}
+            {required && <span className="input__required">*</span>}
           </label>
         )}
         
-        <div className={styles.input__wrapper}>
+        <div className="input__wrapper">
           {leftIcon && (
-            <div className={styles.input__icon} data-position="left">
+            <div className="input__icon" data-position="left">
               {leftIcon}
             </div>
           )}
@@ -82,21 +75,21 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           />
           
           {rightIcon && (
-            <div className={styles.input__icon} data-position="right">
+            <div className="input__icon" data-position="right">
               {rightIcon}
             </div>
           )}
           
           {loading && (
-            <div className={styles.input__loading} aria-hidden="true">
+            <div className="input__loading" aria-hidden="true">
               <svg
-                className={styles.input__loading__icon}
+                className="input__loading__icon"
                 viewBox="0 0 24 24"
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <circle
-                  className={styles.input__loading__circle}
+                  className="input__loading__circle"
                   cx="12"
                   cy="12"
                   r="10"
@@ -112,13 +105,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
         
         {error && (
-          <div id={errorId} className={styles.input__error} role="alert">
+          <div id={errorId} className="input__error" role="alert">
+            <div className="input__error-icon" aria-hidden="true">
+              !
+            </div>
             {error}
           </div>
         )}
         
         {helperText && !error && (
-          <div id={helperId} className={styles.input__helper}>
+          <div id={helperId} className="input__helper">
             {helperText}
           </div>
         )}

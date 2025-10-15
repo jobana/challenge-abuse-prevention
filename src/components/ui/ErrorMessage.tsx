@@ -1,11 +1,11 @@
 import React from 'react';
-import styles from './ErrorMessage.module.scss';
 
 export interface ErrorMessageProps {
   type?: 'error' | 'warning' | 'info';
   title?: string;
   message: string;
   className?: string;
+  id?: string;
   onRetry?: () => void;
   showRetry?: boolean;
 }
@@ -16,15 +16,15 @@ export interface ErrorMessageProps {
  */
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   type = 'error',
-  title,
   message,
   className,
+  id,
   onRetry,
   showRetry = false,
 }) => {
   const messageClasses = [
-    styles.message,
-    styles[`message--${type}`],
+    'message',
+    `message--${type}`,
     className,
   ]
     .filter(Boolean)
@@ -33,58 +33,55 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   const getIcon = () => {
     switch (type) {
       case 'error':
-        return '❌';
+        return (
+          <div className="message__error-icon" aria-hidden="true">
+            !
+          </div>
+        );
       case 'warning':
-        return '⚠️';
+        return (
+          <div className="message__warning-icon" aria-hidden="true">
+            !
+          </div>
+        );
       case 'info':
-        return 'ℹ️';
+        return (
+          <div className="message__info-icon" aria-hidden="true">
+            i
+          </div>
+        );
       default:
-        return '❌';
+        return (
+          <div className="message__error-icon" aria-hidden="true">
+            !
+          </div>
+        );
     }
   };
 
-  const getDefaultTitle = () => {
-    switch (type) {
-      case 'error':
-        return 'Error';
-      case 'warning':
-        return 'Advertencia';
-      case 'info':
-        return 'Información';
-      default:
-        return 'Error';
-    }
-  };
+
 
   return (
     <div
+      id={id}
       className={messageClasses}
       role="alert"
       aria-live="polite"
     >
-      <div className={styles.message__content}>
-        <div className={styles.message__icon} aria-hidden="true">
+      <div className="message__content">
+        <div className="message__icon" aria-hidden="true">
           {getIcon()}
         </div>
-        
-        <div className={styles.message__text}>
-          {(title || getDefaultTitle()) && (
-            <h3 className={styles.message__title}>
-              {title || getDefaultTitle()}
-            </h3>
-          )}
-          
-          <p className={styles.message__description}>
+          <p className="message__description">
             {message}
           </p>
-        </div>
       </div>
       
       {showRetry && onRetry && (
-        <div className={styles.message__actions}>
+        <div className="message__actions">
           <button
             type="button"
-            className={styles.message__retry}
+            className="message__retry"
             onClick={onRetry}
             aria-label="Reintentar"
           >

@@ -86,7 +86,7 @@ function prefetchCriticalResources() {
   // Prefetch CSS crítico
   const criticalCSS = document.createElement('link');
   criticalCSS.rel = 'prefetch';
-  criticalCSS.href = '/src/styles/verification.scss';
+  criticalCSS.href = '/src/styles/verification.css';
   document.head.appendChild(criticalCSS);
   
   // Prefetch siguiente paso si está disponible

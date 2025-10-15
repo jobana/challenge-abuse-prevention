@@ -170,6 +170,14 @@ app.get('*', async (req, res) => {
           <title>Verificación de Datos</title>
           <link rel="preconnect" href="https://www.google.com" />
           <link rel="dns-prefetch" href="https://www.gstatic.com" />
+          <style>
+            /* Estilos críticos para no-script */
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+            .noscript-fallback { display: none; }
+            .noscript-fallback.noscript-active { display: block; }
+            .js-fallback { display: block; }
+            .js-fallback.js-active { display: none; }
+          </style>
           <script>
             window.__INITIAL_DATA__ = ${JSON.stringify(initialData)};
             window.__PERFORMANCE_CONFIG__ = ${JSON.stringify(performanceConfig)};
@@ -177,7 +185,108 @@ app.get('*', async (req, res) => {
           </script>
         </head>
         <body>
-          <div id="root">${html}</div>
+          <noscript>
+            <div class="noscript-fallback noscript-active">
+              <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);">
+                <div style="max-width: 32rem; width: 100%; background: white; border-radius: 0.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
+                  <div style="padding: 2rem 2rem 1rem 2rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
+                    <h1 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700; color: #111827;">
+                      ${locale.startsWith('es') ? 'Verificación de Datos' : 'Verificação de Dados'}
+                    </h1>
+                    <p style="margin: 0; font-size: 1rem; color: #6b7280;">
+                      ${locale.startsWith('es') 
+                        ? 'Por favor, completa la información solicitada para continuar con la verificación.'
+                        : 'Por favor, complete as informações solicitadas para continuar com a verificação.'
+                      }
+                    </p>
+                  </div>
+                  <form action="/api/verification/submit" method="POST" style="padding: 2rem;">
+                    ${initialData?.token ? `<input type="hidden" name="token" value="${initialData.token}" />` : ''}
+                    ${initialData?.referrer ? `<input type="hidden" name="referrer" value="${initialData.referrer}" />` : ''}
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
+                        ${locale.startsWith('es') ? 'Nombre completo *' : 'Nome completo *'}
+                      </label>
+                      <input type="text" name="name" required minlength="2" maxlength="100" 
+                             style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                             placeholder="${locale.startsWith('es') ? 'Ingresa tu nombre completo' : 'Digite seu nome completo'}" />
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
+                        ${locale.startsWith('es') ? 'País *' : 'País *'}
+                      </label>
+                      <select name="country" required style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                        <option value="">${locale.startsWith('es') ? 'Selecciona tu país' : 'Selecione seu país'}</option>
+                        <option value="AR">🇦🇷 Argentina</option>
+                        <option value="BR">🇧🇷 Brasil</option>
+                        <option value="MX">🇲🇽 México</option>
+                        <option value="CO">🇨🇴 ${locale.startsWith('es') ? 'Colombia' : 'Colômbia'}</option>
+                        <option value="CL">🇨🇱 Chile</option>
+                        <option value="PE">🇵🇪 ${locale.startsWith('es') ? 'Perú' : 'Peru'}</option>
+                        <option value="UY">🇺🇾 ${locale.startsWith('es') ? 'Uruguay' : 'Uruguai'}</option>
+                        <option value="PY">🇵🇾 ${locale.startsWith('es') ? 'Paraguay' : 'Paraguai'}</option>
+                        <option value="BO">🇧🇴 ${locale.startsWith('es') ? 'Bolivia' : 'Bolívia'}</option>
+                        <option value="EC">🇪🇨 ${locale.startsWith('es') ? 'Ecuador' : 'Equador'}</option>
+                        <option value="VE">🇻🇪 Venezuela</option>
+                        <option value="CR">🇨🇷 Costa Rica</option>
+                        <option value="PA">🇵🇦 Panamá</option>
+                        <option value="GT">🇬🇹 Guatemala</option>
+                        <option value="HN">🇭🇳 Honduras</option>
+                        <option value="SV">🇸🇻 El Salvador</option>
+                        <option value="NI">🇳🇮 ${locale.startsWith('es') ? 'Nicaragua' : 'Nicarágua'}</option>
+                        <option value="CU">🇨🇺 Cuba</option>
+                        <option value="DO">🇩🇴 República Dominicana</option>
+                        <option value="PR">🇵🇷 ${locale.startsWith('es') ? 'Puerto Rico' : 'Porto Rico'}</option>
+                      </select>
+                    </div>
+                    
+                    <div style="margin-bottom: 1.5rem;">
+                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
+                        ${locale.startsWith('es') ? 'Dirección *' : 'Endereço *'}
+                      </label>
+                      <input type="text" name="address" required minlength="10" maxlength="200"
+                             style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
+                             placeholder="${locale.startsWith('es') ? 'Ingresa tu dirección completa' : 'Digite seu endereço completo'}" />
+                    </div>
+                    
+                    <div style="margin: 2rem 0; padding: 1.5rem; background: #fffbeb; border: 1px solid #fed7aa; border-radius: 0.375rem; text-align: center;">
+                      <p style="margin: 0; font-size: 0.875rem; color: #c2410c; font-weight: 500;">
+                        ${locale.startsWith('es') 
+                          ? 'Para continuar, habilita JavaScript en tu navegador para completar la verificación de seguridad.'
+                          : 'Para continuar, habilite JavaScript no seu navegador para completar a verificação de segurança.'
+                        }
+                      </p>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: center; margin: 2rem 0 1.5rem 0;">
+                      <button type="submit" disabled style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 500; color: white; background: #9ca3af; border: none; border-radius: 0.375rem; cursor: not-allowed;">
+                        ${locale.startsWith('es') ? 'Verificar Datos' : 'Verificar Dados'}
+                      </button>
+                    </div>
+                    
+                    <div style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+                      <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #9ca3af;">
+                        ${locale.startsWith('es') 
+                          ? 'Tus datos están protegidos y solo se utilizan para la verificación.'
+                          : 'Seus dados estão protegidos e são usados apenas para verificação.'
+                        }
+                      </p>
+                      <p style="margin: 0; font-size: 0.875rem; color: #9ca3af;">
+                        ${locale.startsWith('es') 
+                          ? 'Los campos marcados con * son obligatorios.'
+                          : 'Os campos marcados com * são obrigatórios.'
+                        }
+                      </p>
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </noscript>
+          
+          <div id="root" class="js-fallback">${html}</div>
           <script type="module" src="/src/main.tsx"></script>
         </body>
       </html>

@@ -21,14 +21,18 @@ export interface VerificationFormState {
 
 export const useVerificationForm = () => {
   const { t } = useTranslation();
-  const { countries, isLoading: countriesLoading, error: countriesError } = useCountries();
+  const { countries, loading: countriesLoading, error: countriesError } = useCountries();
   const { 
     captchaRef, 
     isCaptchaLoaded, 
     isCaptchaVerified, 
     captchaError,
     resetCaptcha,
-    executeCaptcha 
+    executeCaptcha,
+    onCaptchaSuccess,
+    onCaptchaExpired,
+    onCaptchaError,
+    getCaptchaSiteKey
   } = useCaptcha();
 
   // Esquema de validación con Yup
@@ -62,7 +66,7 @@ export const useVerificationForm = () => {
     },
   });
 
-  const { handleSubmit, formState, reset, setError, clearErrors } = form;
+  const { handleSubmit, formState: rhfFormState, reset, setError, clearErrors } = form;
 
   // Estado del formulario
   const [formState, setFormState] = useState<VerificationFormState>({
@@ -155,11 +159,11 @@ export const useVerificationForm = () => {
 
   // Función para obtener el estado de validación de un campo
   const getFieldState = (fieldName: keyof VerificationFormData) => {
-    const field = formState.errors[fieldName];
+    const field = rhfFormState.errors[fieldName];
     return {
       hasError: !!field,
       errorMessage: field?.message,
-      isValid: !field && formState.touchedFields[fieldName],
+      isValid: !field && rhfFormState.touchedFields[fieldName],
     };
   };
 
@@ -188,11 +192,15 @@ export const useVerificationForm = () => {
     isCaptchaVerified,
     captchaError,
     resetCaptcha,
+    getCaptchaSiteKey,
+    onCaptchaSuccess,
+    onCaptchaExpired,
+    onCaptchaError,
     
     // Validation state
-    isValid: formState.isValid,
-    isDirty: formState.isDirty,
-    touchedFields: formState.touchedFields,
-    errors: formState.errors,
+    isValid: rhfFormState.isValid,
+    isDirty: rhfFormState.isDirty,
+    touchedFields: rhfFormState.touchedFields,
+    errors: rhfFormState.errors,
   };
 };

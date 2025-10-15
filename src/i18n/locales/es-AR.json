@@ -14,9 +14,9 @@
     "retry": "Reintentar"
   },
   "form": {
-    "ariaLabel": "Formulario de verificación de datos",
-    "title": "Verificación de Datos",
-    "description": "Por favor, completa la información solicitada para continuar con la verificación.",
+    "ariaLabel": "verificación de datos",
+    "title": "Falta poco...",
+    "description": "Actualiza tus datos de contacto.",
     "fields": {
       "name": {
         "label": "Nombre completo",

@@ -1,5 +1,4 @@
 import React, { forwardRef } from 'react';
-import styles from './Button.module.scss';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -28,12 +27,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     ref
   ) => {
     const buttonClasses = [
-      styles.button,
-      styles[`button--${variant}`],
-      styles[`button--${size}`],
-      fullWidth && styles['button--full-width'],
-      loading && styles['button--loading'],
-      disabled && styles['button--disabled'],
+      'button',
+      `button--${variant}`,
+      `button--${size}`,
+      fullWidth && 'button--full-width',
       className,
     ]
       .filter(Boolean)
@@ -49,15 +46,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {...props}
       >
         {loading && (
-          <span className={styles.button__spinner} aria-hidden="true">
+          <span className="button__spinner" aria-hidden="true">
             <svg
-              className={styles.button__spinner__icon}
+              className="button__spinner__icon"
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
               <circle
-                className={styles.button__spinner__circle}
+                className="button__spinner__circle"
                 cx="12"
                 cy="12"
                 r="10"
@@ -70,7 +67,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
             </svg>
           </span>
         )}
-        <span className={styles.button__content}>
+        <span className="button__content">
           {children}
         </span>
       </button>

@@ -1,5 +1,5 @@
-import React, { forwardRef, useState, useRef, useEffect } from 'react';
-import styles from './Select.module.scss';
+import React, { forwardRef, useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import '../../styles/components.css';
 
 export interface SelectOption {
   value: string;
@@ -7,8 +7,9 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectElement>, 'onChange'> {
+export interface SelectProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onChange'> {
   label?: string;
+  name?: string;
   error?: string;
   helperText?: string;
   loading?: boolean;
@@ -16,6 +17,9 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
   placeholder?: string;
   searchable?: boolean;
   fullWidth?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  value?: string;
   onChange?: (value: string, option: SelectOption | null) => void;
 }
 
@@ -23,21 +27,22 @@ export interface SelectProps extends Omit<React.SelectHTMLAttributes<HTMLSelectE
  * Componente Select reutilizable
  * Soporta búsqueda, estados de error y accesibilidad completa
  */
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
+export const Select = forwardRef<HTMLDivElement, SelectProps>(
   (
     {
       label,
+      name,
       error,
       helperText,
       loading = false,
-      options,
+      options = [],
       placeholder = 'Seleccionar...',
       searchable = false,
       fullWidth = false,
       className,
       id,
-      disabled,
-      required,
+      disabled = false,
+      required = false,
       value,
       onChange,
       ...props
@@ -47,88 +52,136 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     const [isOpen, setIsOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [focusedIndex, setFocusedIndex] = useState(-1);
-    
-    const selectId = id || `select-${Math.random().toString(36).substr(2, 9)}`;
-    const errorId = error ? `${selectId}-error` : undefined;
-    const helperId = helperText ? `${selectId}-helper` : undefined;
-    const describedBy = [errorId, helperId].filter(Boolean).join(' ') || undefined;
-    
+
+    const selectId = useMemo(() => id || `select-${Math.random().toString(36).substr(2, 9)}`, [id]);
+    const errorId = useMemo(() => error ? `${selectId}-error` : undefined, [error, selectId]);
+    const helperId = useMemo(() => helperText ? `${selectId}-helper` : undefined, [helperText, selectId]);
+    const describedBy = useMemo(() => [errorId, helperId].filter(Boolean).join(' ') || undefined, [errorId, helperId]);
+
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
     const searchInputRef = useRef<HTMLInputElement>(null);
     
     // Filtrar opciones basado en la búsqueda
-    const filteredOptions = options.filter(option =>
-      option.label.toLowerCase().includes(searchQuery.toLowerCase())
+    const filteredOptions = useMemo(() =>
+      options.filter(option =>
+        option.label.toLowerCase().includes(searchQuery.toLowerCase())
+      ), [options, searchQuery]
     );
-    
+
     // Encontrar la opción seleccionada
-    const selectedOption = options.find(option => option.value === value);
-    
-    const selectClasses = [
-      styles.select,
-      error && styles['select--error'],
-      disabled && styles['select--disabled'],
-      loading && styles['select--loading'],
-      fullWidth && styles['select--full-width'],
-      isOpen && styles['select--open'],
+    const selectedOption = useMemo(() =>
+      options.find(option => option.value === value), [options, value]
+    );
+
+    const selectClasses = useMemo(() => [
+      'select__field',
+      error && 'select__field--error',
+      fullWidth && 'select--full-width',
+      disabled && 'select--disabled',
       className,
     ]
       .filter(Boolean)
-      .join(' ');
-    
-    const handleToggle = () => {
+      .join(' '), [error, fullWidth, disabled, className]);
+
+    const handleToggle = useCallback(() => {
       if (disabled || loading) return;
-      setIsOpen(!isOpen);
-      if (!isOpen && searchable) {
-        setTimeout(() => searchInputRef.current?.focus(), 0);
+
+      const newOpenState = !isOpen;
+      setIsOpen(newOpenState);
+
+      if (newOpenState) {
+        setFocusedIndex(-1);
+        if (searchable) {
+          setTimeout(() => searchInputRef.current?.focus(), 0);
+        }
+      } else {
+        setSearchQuery('');
+        setFocusedIndex(-1);
+        triggerRef.current?.focus();
       }
-    };
-    
-    const handleOptionSelect = (option: SelectOption) => {
+    }, [disabled, loading, isOpen, searchable]);
+
+    const handleOptionSelect = useCallback((option: SelectOption) => {
       if (option.disabled) return;
-      
+
       onChange?.(option.value, option);
       setIsOpen(false);
       setSearchQuery('');
       setFocusedIndex(-1);
-    };
+
+      // Devolver el foco al trigger
+      setTimeout(() => triggerRef.current?.focus(), 0);
+    }, [onChange]);
     
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+      if (disabled || loading) return;
+
       if (!isOpen) {
-        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
           e.preventDefault();
           setIsOpen(true);
+          setFocusedIndex(0);
         }
         return;
       }
-      
+
       switch (e.key) {
         case 'ArrowDown':
           e.preventDefault();
-          setFocusedIndex(prev => 
-            prev < filteredOptions.length - 1 ? prev + 1 : 0
-          );
+          setFocusedIndex(prev => {
+            const nextIndex = prev < filteredOptions.length - 1 ? prev + 1 : 0;
+            return nextIndex;
+          });
           break;
+
         case 'ArrowUp':
           e.preventDefault();
-          setFocusedIndex(prev => 
-            prev > 0 ? prev - 1 : filteredOptions.length - 1
-          );
+          setFocusedIndex(prev => {
+            const nextIndex = prev > 0 ? prev - 1 : filteredOptions.length - 1;
+            return nextIndex;
+          });
           break;
+
         case 'Enter':
           e.preventDefault();
           if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
-            handleOptionSelect(filteredOptions[focusedIndex]);
+            const selectedOption = filteredOptions[focusedIndex];
+            if (!selectedOption.disabled) {
+              handleOptionSelect(selectedOption);
+            }
           }
           break;
+
         case 'Escape':
           e.preventDefault();
           setIsOpen(false);
           setSearchQuery('');
           setFocusedIndex(-1);
+          triggerRef.current?.focus();
+          break;
+
+        case 'Tab':
+          setIsOpen(false);
+          setSearchQuery('');
+          setFocusedIndex(-1);
+          break;
+
+        case 'Home':
+          if (filteredOptions.length > 0) {
+            e.preventDefault();
+            setFocusedIndex(0);
+          }
+          break;
+
+        case 'End':
+          if (filteredOptions.length > 0) {
+            e.preventDefault();
+            setFocusedIndex(filteredOptions.length - 1);
+          }
           break;
       }
-    };
+    }, [disabled, loading, isOpen, filteredOptions, focusedIndex, handleOptionSelect]);
     
     // Cerrar dropdown al hacer click fuera
     useEffect(() => {
@@ -145,16 +198,26 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     }, []);
     
     return (
-      <div className={styles.select__container}>
+      <div ref={ref} className="select__container">
         {label && (
-          <label htmlFor={selectId} className={styles.select__label}>
+          <label id={`${selectId}-label`} className="select__label">
             {label}
-            {required && <span className={styles.select__required}>*</span>}
+            {required && <span className="select__required" aria-label="requerido">*</span>}
           </label>
         )}
         
-        <div className={styles.select__wrapper} ref={dropdownRef}>
+        <div className="select__wrapper" ref={dropdownRef}>
+          {/* Input hidden para compatibilidad con formularios */}
+          {name && (
+            <input
+              type="hidden"
+              name={name}
+              value={value || ''}
+            />
+          )}
+
           <div
+            ref={triggerRef}
             className={selectClasses}
             onClick={handleToggle}
             onKeyDown={handleKeyDown}
@@ -165,23 +228,33 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={describedBy}
             aria-required={required}
-            aria-label={label}
+            aria-label={label || 'Seleccionar opción'}
+            aria-labelledby={label ? selectId + '-label' : undefined}
+            aria-activedescendant={
+              isOpen && focusedIndex >= 0
+                ? `${selectId}-option-${focusedIndex}`
+                : undefined
+            }
+            data-name={name}
+            {...props}
           >
-            <span className={styles.select__value}>
+            <span
+              className={`select__value ${!selectedOption ? 'select__value--placeholder' : ''}`}
+            >
               {selectedOption ? selectedOption.label : placeholder}
             </span>
             
-            <div className={styles.select__icon}>
+            <div className="select__icon">
               {loading ? (
-                <div className={styles.select__loading}>
+                <div className="select__loading">
                   <svg
-                    className={styles.select__loading__icon}
+                    className="select__loading__icon"
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <circle
-                      className={styles.select__loading__circle}
+                      className="select__loading__circle"
                       cx="12"
                       cy="12"
                       r="10"
@@ -194,32 +267,19 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                   </svg>
                 </div>
               ) : (
-                <svg
-                  className={`${styles.select__arrow} ${isOpen ? styles['select__arrow--open'] : ''}`}
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M6 9L12 15L18 9"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <svg className={`select__arrow ${isOpen ? 'select__arrow--open' : ''}`} aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="rgba(0, 0, 0, 0.9)"><path d="M9.35229 3.70447L6.00004 7.05672L2.64779 3.70447L1.85229 4.49996L6.00004 8.64771L10.1478 4.49996L9.35229 3.70447Z" fill="rgba(0, 0, 0, 0.9)"></path></svg>
               )}
             </div>
           </div>
           
           {isOpen && (
-            <div className={styles.select__dropdown} role="listbox">
+            <div className="select__dropdown" role="listbox">
               {searchable && (
-                <div className={styles.select__search}>
+                <div className="select__search">
                   <input
                     ref={searchInputRef}
                     type="text"
-                    className={styles.select__search__input}
+                    className="select__search__input"
                     placeholder="Buscar..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -228,20 +288,21 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
                 </div>
               )}
               
-              <div className={styles.select__options}>
+              <div className="select__options">
                 {filteredOptions.length === 0 ? (
-                  <div className={styles.select__no-options}>
+                  <div className="select__no-options">
                     No se encontraron opciones
                   </div>
                 ) : (
                   filteredOptions.map((option, index) => (
                     <div
                       key={option.value}
+                      id={`${selectId}-option-${index}`}
                       className={[
-                        styles.select__option,
-                        option.disabled && styles['select__option--disabled'],
-                        index === focusedIndex && styles['select__option--focused'],
-                        option.value === value && styles['select__option--selected'],
+                        'select__option',
+                        option.disabled && 'select__option--disabled',
+                        index === focusedIndex && 'select__option--focused',
+                        option.value === value && 'select__option--selected',
                       ]
                         .filter(Boolean)
                         .join(' ')}
@@ -260,13 +321,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         </div>
         
         {error && (
-          <div id={errorId} className={styles.select__error} role="alert">
+          <div id={errorId} className="select__error" role="alert">
             {error}
           </div>
         )}
         
         {helperText && !error && (
-          <div id={helperId} className={styles.select__helper}>
+          <div id={helperId} className="select__helper">
             {helperText}
           </div>
         )}

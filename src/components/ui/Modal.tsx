@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button';
-import styles from './Modal.module.scss';
 
 export interface ModalProps {
   /** Si el modal está abierto */
@@ -103,7 +102,7 @@ export const Modal: React.FC<ModalProps> = ({
 
   const modalContent = (
     <div
-      className={`${styles.modal__overlay}`}
+      className="modal__overlay"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
@@ -112,7 +111,7 @@ export const Modal: React.FC<ModalProps> = ({
     >
       <div
         ref={modalRef}
-        className={`${styles.modal} ${styles[`modal--${size}`]} ${className}`}
+        className={`modal modal--${size} ${className}`}
         tabIndex={-1}
         id={id}
       >
@@ -156,7 +155,7 @@ export const Modal: React.FC<ModalProps> = ({
         )}
         
         <div 
-          className={styles.modal__content}
+          className="modal__content"
           id={id ? `${id}-content` : undefined}
         >
           {children}

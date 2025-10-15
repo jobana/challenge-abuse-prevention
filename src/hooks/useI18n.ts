@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useCallback } from 'react';
-import { SupportedLocale, SUPPORTED_LOCALES, saveLanguagePreference, getLanguageInfo } from '@i18n/detector';
+import { SupportedLocale, SUPPORTED_LOCALES, saveLanguagePreference, getLanguageInfo } from '../i18n/detector';
 
 /**
  * Hook personalizado para i18n con funcionalidades adicionales
