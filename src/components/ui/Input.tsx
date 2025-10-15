@@ -52,7 +52,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label htmlFor={inputId} className="input__label">
             {label}
-            {required && <span className="input__required">*</span>}
           </label>
         )}
         

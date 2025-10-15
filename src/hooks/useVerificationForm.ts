@@ -5,6 +5,8 @@ import * as yup from 'yup';
 import { useTranslation } from 'react-i18next';
 import { useCountries } from './useCountries';
 import { useCaptcha } from './useCaptcha';
+import { DecodedQueryParams } from '../types/queryParams.types';
+import { buildQueryString } from '../utils/queryParams';
 
 // Tipos para el formulario
 export interface VerificationFormData {
@@ -19,7 +21,7 @@ export interface VerificationFormState {
   error: string | null;
 }
 
-export const useVerificationForm = () => {
+export const useVerificationForm = (initialData?: DecodedQueryParams) => {
   const { t } = useTranslation();
   const { countries, loading: countriesLoading, error: countriesError } = useCountries();
   const { 
@@ -55,14 +57,14 @@ export const useVerificationForm = () => {
       .max(200, t('form.validation.address.maxLength')),
   });
 
-  // Configurar react-hook-form
+  // Configurar react-hook-form con datos iniciales de query params
   const form = useForm<VerificationFormData>({
     resolver: yupResolver(validationSchema),
     mode: 'onBlur',
     defaultValues: {
-      name: '',
-      country: '',
-      address: '',
+      name: initialData?.customerData?.firstName || '',
+      country: initialData?.customerData?.country || '',
+      address: initialData?.shippingData?.address || '',
     },
   });
 
@@ -97,6 +99,13 @@ export const useVerificationForm = () => {
         body: JSON.stringify({
           ...data,
           captchaToken: isCaptchaVerified || await executeCaptcha(),
+          referrer: initialData?.referrer || '/',
+          token: initialData?.token || '',
+          customerData: initialData?.customerData || {},
+          shippingData: initialData?.shippingData || {},
+          billingData: initialData?.billingData || {},
+          paymentData: initialData?.paymentData || {},
+          orderData: initialData?.orderData || {},
         }),
       });
 
@@ -106,12 +115,27 @@ export const useVerificationForm = () => {
       }
 
       const result = await response.json();
-      
-      setFormState(prev => ({ 
-        ...prev, 
-        isSubmitting: false, 
-        isSuccess: true 
+
+      setFormState(prev => ({
+        ...prev,
+        isSubmitting: false,
+        isSuccess: true
       }));
+
+      // Redirigir con token de captcha y referrer original
+      const captchaToken = isCaptchaVerified || await executeCaptcha();
+      const redirectParams = {
+        token: captchaToken,
+        referrer: initialData?.referrer || '/',
+        orderId: result.orderId || '',
+      };
+
+      const redirectUrl = `${initialData?.referrer || '/'}${buildQueryString(redirectParams)}`;
+
+      // Redirigir después de un breve delay para que el usuario vea el éxito
+      setTimeout(() => {
+        window.location.href = redirectUrl;
+      }, 2000);
 
       // Resetear formulario después del éxito
       reset();

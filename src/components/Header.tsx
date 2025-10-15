@@ -6,7 +6,7 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({
-    logoSrc = "../public/assets/img/logo_large_plus@2x.webp",
+    logoSrc = "../public/assets/img/logo__small@2x.png",
     logoAlt = 'volver a Mercado Libre',
 }) => {
   return (

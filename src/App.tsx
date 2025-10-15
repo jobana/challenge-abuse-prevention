@@ -1,9 +1,10 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { VerificationForm } from './components/VerificationForm';
 import { ErrorFallback } from './components/ui/ErrorFallback';
 import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { Header } from './components/Header';
 import { useI18n } from './hooks/useI18n';
+import { getDecodedQueryParams } from './utils/queryParams';
 import './styles/globals.css';
 
 /**
@@ -27,8 +28,7 @@ class AppErrorBoundary extends React.Component<
 
     // Enviar error a servicio de monitoreo en producción
     if (process.env.NODE_ENV === 'production') {
-      // Aquí se podría integrar con Sentry, LogRocket, etc.
-      // reportError(error, errorInfo);
+
     }
   }
 
@@ -45,13 +45,46 @@ class AppErrorBoundary extends React.Component<
   }
 }
 
+
+interface AppProps {
+  initialData?: any;
+  performanceConfig?: any;
+}
+
 /**
  * Componente principal de la aplicación
  * Maneja i18n, error boundaries y el layout principal
  */
-export const App: React.FC = memo(() => {
-  const { t, currentLanguageInfo, i18n } = useI18n();
+export const App: React.FC<AppProps> = memo(({ initialData, performanceConfig }) => {
+  const { t, i18n } = useI18n();
 
+  // Usar datos del servidor si están disponibles, sino extraer de query params
+  const queryParams = useMemo(() => {
+    // En SSR, usar datos del servidor
+    if (initialData) {
+      console.log('🚀 Using SSR initial data:', initialData);
+      return initialData;
+    }
+
+    // En cliente, extraer de window
+    if (typeof window !== 'undefined') {
+      // Primero intentar obtener de window.__INITIAL_DATA__
+      const windowData = (window as any).__INITIAL_DATA__;
+      if (windowData) {
+        console.log('🌐 Using window initial data:', windowData);
+        return windowData;
+      }
+
+      // Fallback a query params
+      console.log('📄 Using query params fallback');
+      return getDecodedQueryParams();
+    }
+
+    return {};
+  }, [initialData]);
+
+  // Log para debugging
+  console.log('🎯 App rendering with data:', queryParams);
 
   return (
     <AppErrorBoundary>
@@ -59,7 +92,15 @@ export const App: React.FC = memo(() => {
         <Header />
 
         <main className="app-main">
-          <VerificationForm />
+            <div className="verificationForm__header">
+              <h1 className="verificationForm__title">
+                {t('form.title')}
+              </h1>
+              <p className="verificationForm__description">
+                {t('form.description')}
+              </p>
+            </div>
+          <VerificationForm initialData={queryParams} />
         </main>
       </div>
     </AppErrorBoundary>

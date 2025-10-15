@@ -2,15 +2,15 @@ import { User, UserAddress, UserPreferences } from '@types/api.types';
 
 /**
  * Datos mock para la API meli-users
- * Simula usuarios con información completa
+ * Un usuario por cada país soportado (AR y BR)
  */
 export const MOCK_USERS: User[] = [
   {
-    id: 'user-001',
-    email: 'juan.perez@example.com',
-    firstName: 'Juan',
-    lastName: 'Pérez',
-    phone: '+54 11 1234-5678',
+    id: 'user-ar-001',
+    email: 'juan.perez@mercadolibre.com.ar',
+    firstName: 'Juan Carlos',
+    lastName: 'Pérez González',
+    phone: '+54 11 4567-8901',
     address: {
       street: 'Av. Corrientes',
       number: '1234',
@@ -27,14 +27,15 @@ export const MOCK_USERS: User[] = [
     },
   },
   {
-    id: 'user-002',
-    email: 'maria.silva@example.com',
-    firstName: 'Maria',
-    lastName: 'Silva',
-    phone: '+55 11 9876-5432',
+    id: 'user-br-001',
+    email: 'maria.silva@mercadolivre.com.br',
+    firstName: 'Maria Fernanda',
+    lastName: 'Silva Santos',
+    phone: '+55 11 98765-4321',
     address: {
       street: 'Rua das Flores',
       number: '567',
+      apartment: '12B',
       city: 'São Paulo',
       state: 'SP',
       postalCode: '01234-567',
@@ -43,68 +44,7 @@ export const MOCK_USERS: User[] = [
     preferences: {
       language: 'pt-BR',
       currency: 'BRL',
-      notifications: false,
-    },
-  },
-  {
-    id: 'user-003',
-    email: 'carlos.rodriguez@example.com',
-    firstName: 'Carlos',
-    lastName: 'Rodríguez',
-    phone: '+52 55 1111-2222',
-    address: {
-      street: 'Calle Reforma',
-      number: '890',
-      apartment: '12B',
-      city: 'Ciudad de México',
-      state: 'CDMX',
-      postalCode: '06600',
-      country: 'MX',
-    },
-    preferences: {
-      language: 'es-MX',
-      currency: 'MXN',
       notifications: true,
-    },
-  },
-  {
-    id: 'user-004',
-    email: 'ana.garcia@example.com',
-    firstName: 'Ana',
-    lastName: 'García',
-    phone: '+57 1 333-4444',
-    address: {
-      street: 'Carrera 7',
-      number: '123-45',
-      city: 'Bogotá',
-      state: 'Cundinamarca',
-      postalCode: '110111',
-      country: 'CO',
-    },
-    preferences: {
-      language: 'es-CO',
-      currency: 'COP',
-      notifications: true,
-    },
-  },
-  {
-    id: 'user-005',
-    email: 'pedro.martinez@example.com',
-    firstName: 'Pedro',
-    lastName: 'Martínez',
-    phone: '+56 2 5555-6666',
-    address: {
-      street: 'Av. Libertador',
-      number: '789',
-      city: 'Santiago',
-      state: 'RM',
-      postalCode: '8320000',
-      country: 'CL',
-    },
-    preferences: {
-      language: 'es-CL',
-      currency: 'CLP',
-      notifications: false,
     },
   },
 ];
@@ -132,9 +72,55 @@ export const searchUserByEmail = async (email: string): Promise<User | null> => 
   const users = await Promise.all(
     MOCK_USERS.map(user => getMockUserResponse(user.id))
   );
-  
+
   const validUsers = users.filter(Boolean) as User[];
   return validUsers.find(user => user.email === email) || null;
+};
+
+/**
+ * Obtiene un usuario mock por código de país
+ */
+export const getUserByCountry = async (countryCode: string): Promise<User | null> => {
+  // Simular latencia
+  await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
+
+  const user = MOCK_USERS.find(u => u.address?.country === countryCode);
+  return user || null;
+};
+
+/**
+ * Obtiene datos de ejemplo para inicializar el microfrontend
+ */
+export const getExampleDataForCountry = (countryCode: string) => {
+  const user = MOCK_USERS.find(u => u.address?.country === countryCode);
+
+  if (!user) return null;
+
+  return {
+    customerData: {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      phone: user.phone,
+      country: user.address?.country,
+    },
+    shippingData: {
+      address: `${user.address?.street} ${user.address?.number}${user.address?.apartment ? ', ' + user.address.apartment : ''}, ${user.address?.city}, ${user.address?.state}`,
+      country: user.address?.country,
+      postalCode: user.address?.postalCode,
+    },
+    billingData: {
+      sameAsShipping: true,
+      address: user.address,
+    },
+    paymentData: {
+      currency: user.preferences.currency,
+    },
+    orderData: {
+      total: countryCode === 'AR' ? 89999 : 299.99, // Precios ejemplo
+      currency: user.preferences.currency,
+    },
+  };
 };
 
 /**

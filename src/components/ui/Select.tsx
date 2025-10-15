@@ -202,7 +202,6 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
         {label && (
           <label id={`${selectId}-label`} className="select__label">
             {label}
-            {required && <span className="select__required" aria-label="requerido">*</span>}
           </label>
         )}
         

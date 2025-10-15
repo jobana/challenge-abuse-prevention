@@ -1,6 +1,8 @@
 import express from 'express';
-import { render } from './entry-server';
+import { render } from './entry-server.tsx';
 import { logger } from './utils/logger';
+import { getMockCountriesResponse } from './api/mocks/countries.mock.js';
+import { getExampleDataForCountry } from './api/mocks/users.mock.js';
 import compression from 'compression';
 import helmet from 'helmet';
 import path from 'path';
@@ -131,13 +133,28 @@ app.get('*', async (req, res) => {
       RENDER_TIMEOUT: parseInt(process.env.RENDER_TIMEOUT || '5000'),
     };
     
-    // Datos iniciales
+    // Extraer query params para datos mock
+    const queryCountry = req.query.country as string;
+    const mockCountry = queryCountry && ['AR', 'BR'].includes(queryCountry) ? queryCountry :
+      (locale === 'pt-BR' ? 'BR' : 'AR');
+
+    // Obtener datos de ejemplo basados en el país
+    const exampleData = getExampleDataForCountry(mockCountry);
+
+    // Datos iniciales con mock data
     const initialData = {
       locale,
       referrer: req.get('referer'),
       userAgent: req.get('User-Agent'),
       ip: req.ip,
       timestamp: new Date().toISOString(),
+      // Incluir datos mock como ejemplo si no hay query params específicos
+      customerData: req.query.customerData ? JSON.parse(req.query.customerData as string) : exampleData?.customerData,
+      shippingData: req.query.shippingData ? JSON.parse(req.query.shippingData as string) : exampleData?.shippingData,
+      billingData: req.query.billingData ? JSON.parse(req.query.billingData as string) : exampleData?.billingData,
+      paymentData: req.query.paymentData ? JSON.parse(req.query.paymentData as string) : exampleData?.paymentData,
+      orderData: req.query.orderData ? JSON.parse(req.query.orderData as string) : exampleData?.orderData,
+      token: req.query.token as string || `demo_token_${Date.now()}`
     };
     
     // Renderizar la aplicación
@@ -324,8 +341,20 @@ app.get('*', async (req, res) => {
 // API endpoint para verificación
 app.post('/api/verification/submit', async (req, res) => {
   try {
-    const { name, country, address, captchaToken } = req.body;
-    
+    const {
+      name,
+      country,
+      address,
+      captchaToken,
+      referrer,
+      token,
+      customerData,
+      shippingData,
+      billingData,
+      paymentData,
+      orderData
+    } = req.body;
+
     // Validar datos requeridos
     if (!name || !country || !address || !captchaToken) {
       return res.status(400).json({
@@ -351,12 +380,23 @@ app.post('/api/verification/submit', async (req, res) => {
       name,
       country,
       address,
+      referrer,
+      token,
+      hasCustomerData: !!customerData,
+      hasShippingData: !!shippingData,
+      hasBillingData: !!billingData,
+      hasPaymentData: !!paymentData,
+      hasOrderData: !!orderData,
       ip: req.ip,
       userAgent: req.get('User-Agent'),
     });
-    
+
+    // Generar orderId único para la respuesta
+    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     res.json({
       success: true,
+      orderId,
       message: 'Verificación completada exitosamente',
       data: {
         id: `verification_${Date.now()}`,
@@ -377,38 +417,63 @@ app.post('/api/verification/submit', async (req, res) => {
   }
 });
 
-// API endpoint para obtener países
+// API endpoint para obtener países usando mocks
 app.get('/api/countries', async (req, res) => {
   try {
-    // Simular latencia de API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const countries = [
-      { id: 'AR', name: 'Argentina', code: 'AR', flag: '🇦🇷' },
-      { id: 'BR', name: 'Brasil', code: 'BR', flag: '🇧🇷' },
-      { id: 'MX', name: 'México', code: 'MX', flag: '🇲🇽' },
-      { id: 'CO', name: 'Colombia', code: 'CO', flag: '🇨🇴' },
-      { id: 'CL', name: 'Chile', code: 'CL', flag: '🇨🇱' },
-      { id: 'PE', name: 'Perú', code: 'PE', flag: '🇵🇪' },
-      { id: 'UY', name: 'Uruguay', code: 'UY', flag: '🇺🇾' },
-      { id: 'PY', name: 'Paraguay', code: 'PY', flag: '🇵🇾' },
-      { id: 'BO', name: 'Bolivia', code: 'BO', flag: '🇧🇴' },
-      { id: 'EC', name: 'Ecuador', code: 'EC', flag: '🇪🇨' },
-    ];
-    
+    const countries = await getMockCountriesResponse();
+
     res.json({
       success: true,
       data: countries,
     });
-    
+
   } catch (error) {
     logger.error('Countries API Error', {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al obtener países',
+    });
+  }
+});
+
+// API endpoint para obtener datos de ejemplo por país
+app.get('/api/example-data/:country', async (req, res) => {
+  try {
+    const { country } = req.params;
+
+    if (!['AR', 'BR'].includes(country)) {
+      return res.status(400).json({
+        success: false,
+        message: 'País no soportado. Solo se permiten AR y BR.',
+      });
+    }
+
+    const exampleData = getExampleDataForCountry(country);
+
+    if (!exampleData) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron datos de ejemplo para el país especificado.',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: exampleData,
+    });
+
+  } catch (error) {
+    logger.error('Example Data API Error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+      country: req.params.country,
+    });
+
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener datos de ejemplo',
     });
   }
 });

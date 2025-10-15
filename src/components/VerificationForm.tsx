@@ -1,16 +1,21 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { 
-  Input, 
-  Button, 
-  Select, 
-  LoadingSpinner, 
-  ErrorMessage 
+import {
+  Input,
+  Button,
+  Select,
+  LoadingSpinner,
+  ErrorMessage
 } from './ui';
 import { useVerificationForm } from '../hooks/useVerificationForm';
+import { DecodedQueryParams } from '../types/queryParams.types';
 
-export const VerificationForm: React.FC = () => {
+interface VerificationFormProps {
+  initialData?: DecodedQueryParams;
+}
+
+export const VerificationForm: React.FC<VerificationFormProps> = ({ initialData }) => {
   const { t } = useTranslation();
   const {
     form,
@@ -31,7 +36,7 @@ export const VerificationForm: React.FC = () => {
     onCaptchaSuccess,
     onCaptchaExpired,
     onCaptchaError,
-  } = useVerificationForm();
+  } = useVerificationForm(initialData);
 
   const { register, formState: { errors, isValid, isDirty } } = form;
 
@@ -40,7 +45,7 @@ export const VerificationForm: React.FC = () => {
     return (
       <div className="successContainer">
         <div className="successIcon">
-         
+          ✓
         </div>
         <h2 className="successTitle">
           {t('form.success.title')}
@@ -66,14 +71,7 @@ export const VerificationForm: React.FC = () => {
       noValidate
       aria-label={t('form.ariaLabel')}
     >
-      <div className="verificationForm__header">
-        <h1 className="verificationForm__title">
-          {t('form.title')}
-        </h1>
-        <p className="verificationForm__title">
-          {t('form.description')}
-        </p>
-      </div>
+
 
       {/* Error general del formulario */}
       {error && (
@@ -211,7 +209,6 @@ export const VerificationForm: React.FC = () => {
         <Button
           type="submit"
           variant="primary"
-          
           className="submitButton"
         >
           {isSubmitting ? (

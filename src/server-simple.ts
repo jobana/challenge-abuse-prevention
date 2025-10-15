@@ -3,12 +3,106 @@ import compression from 'compression';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
+// Mock data para testing
+const MOCK_COUNTRIES = [
+  {
+    id: 'AR',
+    name: 'Argentina',
+    code: 'AR',
+    flag: '🇦🇷',
+    currency: 'ARS',
+    timezone: 'America/Argentina/Buenos_Aires',
+    locale: 'es-AR',
+  },
+  {
+    id: 'BR',
+    name: 'Brasil',
+    code: 'BR',
+    flag: '🇧🇷',
+    currency: 'BRL',
+    timezone: 'America/Sao_Paulo',
+    locale: 'pt-BR',
+  },
+];
+
+const getExampleDataForCountry = (countryCode: string) => {
+  const examples = {
+    AR: {
+      customerData: {
+        firstName: 'Juan Carlos',
+        lastName: 'Pérez González',
+        email: 'juan.perez@mercadolibre.com.ar',
+        phone: '+54 11 4567-8901',
+        country: 'AR',
+      },
+      shippingData: {
+        address: 'Av. Corrientes 1234, 5A, Buenos Aires, CABA',
+        country: 'AR',
+        postalCode: '1043',
+      },
+      billingData: {
+        sameAsShipping: true,
+        address: {
+          street: 'Av. Corrientes',
+          number: '1234',
+          apartment: '5A',
+          city: 'Buenos Aires',
+          state: 'CABA',
+          postalCode: '1043',
+          country: 'AR',
+        },
+      },
+      paymentData: {
+        currency: 'ARS',
+      },
+      orderData: {
+        total: 89999,
+        currency: 'ARS',
+      },
+    },
+    BR: {
+      customerData: {
+        firstName: 'Maria Fernanda',
+        lastName: 'Silva Santos',
+        email: 'maria.silva@mercadolivre.com.br',
+        phone: '+55 11 98765-4321',
+        country: 'BR',
+      },
+      shippingData: {
+        address: 'Rua das Flores 567, 12B, São Paulo, SP',
+        country: 'BR',
+        postalCode: '01234-567',
+      },
+      billingData: {
+        sameAsShipping: true,
+        address: {
+          street: 'Rua das Flores',
+          number: '567',
+          apartment: '12B',
+          city: 'São Paulo',
+          state: 'SP',
+          postalCode: '01234-567',
+          country: 'BR',
+        },
+      },
+      paymentData: {
+        currency: 'BRL',
+      },
+      orderData: {
+        total: 299.99,
+        currency: 'BRL',
+      },
+    },
+  };
+
+  return examples[countryCode as keyof typeof examples] || null;
+};
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3000;
 
 // Middleware de seguridad
 app.use(helmet({
@@ -64,66 +158,121 @@ app.use((req, res, next) => {
   }
 });
 
-// Función para detectar idioma basado en el dominio
+// Función mejorada para detectar idioma basado en dominio MercadoLibre
 function detectLanguage(req: express.Request): string {
   const host = req.get('host') || '';
   const referer = req.get('referer') || '';
-  
-  // Detectar por dominio
-  if (host.includes('mercadolibre.com.ar') || referer.includes('mercadolibre.com.ar')) {
-    return 'es-AR';
+  const userAgent = req.get('User-Agent') || '';
+
+  // Mapeo de dominios MercadoLibre (coincidencia exacta y parcial)
+  const domainMap = {
+    'mercadolibre.com.ar': 'es-AR',
+    'mercadolivre.com.br': 'pt-BR',
+    'mercadolibre.com.mx': 'es-AR', // México usa español
+    'mercadolibre.com.co': 'es-AR', // Colombia usa español
+    'mercadolibre.cl': 'es-AR',     // Chile usa español
+    'localhost': 'es-AR', // Desarrollo
+  };
+
+  // 1. Detectar por host exacto
+  for (const [domain, locale] of Object.entries(domainMap)) {
+    if (host === domain || host.endsWith(`.${domain}`)) {
+      console.log(`Language detected by host: ${host} -> ${locale}`);
+      return locale;
+    }
   }
-  
-  if (host.includes('mercadolivre.com.br') || referer.includes('mercadolivre.com.br')) {
-    return 'pt-BR';
+
+  // 2. Detectar por referer (cuando viene de otra página ML)
+  for (const [domain, locale] of Object.entries(domainMap)) {
+    if (referer.includes(domain)) {
+      console.log(`Language detected by referer: ${referer} -> ${locale}`);
+      return locale;
+    }
   }
-  
-  // Detectar por query parameter
-  const lang = req.query.lang as string;
+
+  // 3. Detectar por query parameter explícito
+  const lang = req.query.lang as string || req.query.locale as string;
   if (lang && ['es-AR', 'pt-BR'].includes(lang)) {
+    console.log(`Language detected by query: ${lang}`);
     return lang;
   }
-  
-  // Detectar por Accept-Language header
+
+  // 4. Detectar por Accept-Language header
   const acceptLanguage = req.get('Accept-Language') || '';
-  if (acceptLanguage.includes('pt')) {
+  if (acceptLanguage.includes('pt-BR') || acceptLanguage.includes('pt')) {
+    console.log(`Language detected by Accept-Language: pt-BR`);
     return 'pt-BR';
   }
-  
-  // Default a español
+
+  // 5. Detectar contexto por X-Forwarded-Host (para proxies/CDN)
+  const forwardedHost = req.get('X-Forwarded-Host') || req.get('X-Original-Host');
+  if (forwardedHost) {
+    for (const [domain, locale] of Object.entries(domainMap)) {
+      if (forwardedHost.includes(domain)) {
+        console.log(`Language detected by X-Forwarded-Host: ${forwardedHost} -> ${locale}`);
+        return locale;
+      }
+    }
+  }
+
+  // 6. Default a español (Argentina es el mercado principal)
+  console.log('Language fallback to es-AR');
   return 'es-AR';
 }
 
-// API endpoint para obtener países
+// API endpoint para obtener países usando mocks
 app.get('/api/countries', async (req, res) => {
   try {
     // Simular latencia de API
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    const countries = [
-      { id: 'AR', name: 'Argentina', code: 'AR', flag: '🇦🇷' },
-      { id: 'BR', name: 'Brasil', code: 'BR', flag: '🇧🇷' },
-      { id: 'MX', name: 'México', code: 'MX', flag: '🇲🇽' },
-      { id: 'CO', name: 'Colombia', code: 'CO', flag: '🇨🇴' },
-      { id: 'CL', name: 'Chile', code: 'CL', flag: '🇨🇱' },
-      { id: 'PE', name: 'Perú', code: 'PE', flag: '🇵🇪' },
-      { id: 'UY', name: 'Uruguay', code: 'UY', flag: '🇺🇾' },
-      { id: 'PY', name: 'Paraguay', code: 'PY', flag: '🇵🇾' },
-      { id: 'BO', name: 'Bolivia', code: 'BO', flag: '🇧🇴' },
-      { id: 'EC', name: 'Ecuador', code: 'EC', flag: '🇪🇨' },
-    ];
-    
+    await new Promise(resolve => setTimeout(resolve, 300));
+
     res.json({
       success: true,
-      data: countries,
+      data: MOCK_COUNTRIES,
     });
-    
+
   } catch (error) {
     console.error('Countries API Error:', error);
-    
+
     res.status(500).json({
       success: false,
       message: 'Error al obtener países',
+    });
+  }
+});
+
+// API endpoint para obtener datos de ejemplo por país
+app.get('/api/example-data/:country', async (req, res) => {
+  try {
+    const { country } = req.params;
+
+    if (!['AR', 'BR'].includes(country)) {
+      return res.status(400).json({
+        success: false,
+        message: 'País no soportado. Solo se permiten AR y BR.',
+      });
+    }
+
+    const exampleData = getExampleDataForCountry(country);
+
+    if (!exampleData) {
+      return res.status(404).json({
+        success: false,
+        message: 'No se encontraron datos de ejemplo para el país especificado.',
+      });
+    }
+
+    res.json({
+      success: true,
+      data: exampleData,
+    });
+
+  } catch (error) {
+    console.error('Example Data API Error:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Error al obtener datos de ejemplo',
     });
   }
 });
@@ -170,13 +319,28 @@ app.post('/api/verification/submit', async (req, res) => {
 app.get('*', (req, res) => {
   const locale = detectLanguage(req);
   
-  // Datos iniciales
+  // Extraer query params para datos mock
+  const queryCountry = req.query.country as string;
+  const mockCountry = queryCountry && ['AR', 'BR'].includes(queryCountry) ? queryCountry :
+    (locale === 'pt-BR' ? 'BR' : 'AR');
+
+  // Obtener datos de ejemplo basados en el país
+  const exampleData = getExampleDataForCountry(mockCountry);
+
+  // Datos iniciales con mock data
   const initialData = {
     locale,
     referrer: req.get('referer'),
     userAgent: req.get('User-Agent'),
     ip: req.ip,
     timestamp: new Date().toISOString(),
+    // Incluir datos mock como ejemplo si no hay query params específicos
+    customerData: req.query.customerData ? JSON.parse(req.query.customerData as string) : exampleData?.customerData,
+    shippingData: req.query.shippingData ? JSON.parse(req.query.shippingData as string) : exampleData?.shippingData,
+    billingData: req.query.billingData ? JSON.parse(req.query.billingData as string) : exampleData?.billingData,
+    paymentData: req.query.paymentData ? JSON.parse(req.query.paymentData as string) : exampleData?.paymentData,
+    orderData: req.query.orderData ? JSON.parse(req.query.orderData as string) : exampleData?.orderData,
+    token: req.query.token as string || `demo_token_${Date.now()}`
   };
   
   // Configuración de performance
@@ -255,7 +419,7 @@ app.get('*', (req, res) => {
           </div>
         </div>
         
-        <script type="module" src="/assets/main-FeQ2Zsmk.js"></script>
+        <script type="module" src="/assets/main-18Rzrn87.js"></script>
         <style>
           @keyframes spin {
             0% { transform: rotate(0deg); }

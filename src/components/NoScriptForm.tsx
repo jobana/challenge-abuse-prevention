@@ -2,7 +2,18 @@ import React from 'react';
 
 interface NoScriptFormProps {
   locale: string;
-  initialData?: any;
+  initialData?: {
+    customerData?: {
+      firstName?: string;
+      lastName?: string;
+      country?: string;
+    };
+    shippingData?: {
+      address?: string;
+    };
+    token?: string;
+    referrer?: string;
+  };
 }
 
 export const NoScriptForm: React.FC<NoScriptFormProps> = ({ locale, initialData }) => {
@@ -49,6 +60,7 @@ export const NoScriptForm: React.FC<NoScriptFormProps> = ({ locale, initialData 
               name="name"
               className="noscript-form__input"
               placeholder={isSpanish ? 'Ingresa tu nombre completo' : 'Digite seu nome completo'}
+              defaultValue={initialData?.customerData?.firstName || ''}
               required
               minLength={2}
               maxLength={100}
@@ -71,8 +83,12 @@ export const NoScriptForm: React.FC<NoScriptFormProps> = ({ locale, initialData 
               <option value="">
                 {isSpanish ? 'Selecciona tu país' : 'Selecione seu país'}
               </option>
-              <option value="AR">🇦🇷 Argentina</option>
-              <option value="BR">🇧🇷 Brasil</option>
+              <option value="AR" selected={initialData?.customerData?.country === 'AR'}>
+                🇦🇷 Argentina
+              </option>
+              <option value="BR" selected={initialData?.customerData?.country === 'BR'}>
+                🇧🇷 Brasil
+              </option>
             </select>
             <div className="noscript-form__error" id="country-error"></div>
           </div>
@@ -87,6 +103,7 @@ export const NoScriptForm: React.FC<NoScriptFormProps> = ({ locale, initialData 
               name="address"
               className="noscript-form__input"
               placeholder={isSpanish ? 'Ingresa tu dirección completa' : 'Digite seu endereço completo'}
+              defaultValue={initialData?.shippingData?.address || ''}
               required
               minLength={10}
               maxLength={200}
@@ -97,10 +114,21 @@ export const NoScriptForm: React.FC<NoScriptFormProps> = ({ locale, initialData 
 
           <div className="noscript-form__captcha">
             <div className="noscript-form__captcha-info">
-              <p className="noscript-form__captcha-text">
-                {isSpanish 
-                  ? 'Para continuar, habilita JavaScript en tu navegador para completar la verificación de seguridad.'
-                  : 'Para continuar, habilite JavaScript no seu navegador para completar a verificação de segurança.'
+              <div className="noscript-form__warning">
+                <span className="noscript-form__warning-icon">⚠️</span>
+                <p className="noscript-form__captcha-text">
+                  <strong>
+                    {isSpanish
+                      ? 'JavaScript requerido para verificación de seguridad'
+                      : 'JavaScript necessário para verificação de segurança'
+                    }
+                  </strong>
+                </p>
+              </div>
+              <p className="noscript-form__captcha-description">
+                {isSpanish
+                  ? 'Para completar la verificación, necesitas habilitar JavaScript en tu navegador. Esto nos permite validar que eres una persona real y proteger tu cuenta.'
+                  : 'Para completar a verificação, você precisa habilitar JavaScript no seu navegador. Isso nos permite validar que você é uma pessoa real e proteger sua conta.'
                 }
               </p>
             </div>
