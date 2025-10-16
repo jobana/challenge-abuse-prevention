@@ -19,4 +19,4 @@ export type {
   UserPreferences,
   UserResponse,
   CaptchaResponse,
-} from '@types/api.types';
+} from '../../types/api.types';

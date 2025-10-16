@@ -1,4 +1,4 @@
-import { User, UserAddress, UserPreferences } from '@types/api.types';
+import { User } from '../../types/api.types';
 
 /**
  * Datos mock para la API meli-users
@@ -50,7 +50,7 @@ export const MOCK_USERS: User[] = [
 ];
 
 /**
- * Simula la respuesta de la API meli-users
+ * Simula la respuesta de la API 
  */
 export const getMockUserResponse = async (userId: string): Promise<User | null> => {
   // Simular latencia de red

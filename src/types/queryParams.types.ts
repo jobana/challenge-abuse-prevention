@@ -6,8 +6,8 @@ export interface QueryParams {
   billingData?: string;
   paymentData?: string;
   orderData?: string;
-  referrer?: string;
-  token?: string;
+  referrer?: number; // ID numérico del paso/página previa
+  token?: string;    // Token de la sesión/transacción
   step?: string;
 }
 
@@ -17,9 +17,18 @@ export interface DecodedQueryParams {
   billingData?: any;
   paymentData?: any;
   orderData?: any;
-  referrer?: string;
-  token?: string;
+  referrer?: number; // ID numérico del paso/página previa
+  token?: string;    // Token de la sesión/transacción
   step?: string;
+}
+
+// Datos de salida del microfrontend
+export interface MicrofrontendOutput {
+  referrer: number;        // Mismo ID que vino de entrada
+  captchaToken: string;    // Token del captcha verificado
+  verified: boolean;       // Estado de verificación
+  timestamp: string;       // Timestamp de la verificación
+  userData?: any;          // Datos verificados del usuario (opcional)
 }
 
 export interface QueryParamsContextType {

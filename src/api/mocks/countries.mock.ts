@@ -1,4 +1,4 @@
-import { Country } from '@types/api.types';
+import { Country } from '../../types/api.types';
 
 /**
  * Datos mock para la API meli-countries

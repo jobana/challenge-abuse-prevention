@@ -29,8 +29,6 @@ export const VerificationForm: React.FC<VerificationFormProps> = ({ initialData 
     countriesLoading,
     countriesError,
     captchaRef,
-    isCaptchaLoaded,
-    isCaptchaVerified,
     captchaError,
     getCaptchaSiteKey,
     onCaptchaSuccess,
@@ -38,31 +36,7 @@ export const VerificationForm: React.FC<VerificationFormProps> = ({ initialData 
     onCaptchaError,
   } = useVerificationForm(initialData);
 
-  const { register, formState: { errors, isValid, isDirty } } = form;
-
-  // Si el formulario se envió exitosamente
-  if (isSuccess) {
-    return (
-      <div className="successContainer">
-        <div className="successIcon">
-          ✓
-        </div>
-        <h2 className="successTitle">
-          {t('form.success.title')}
-        </h2>
-        <p className="successMessage">
-          {t('form.success.message')}
-        </p>
-        <Button
-          variant="primary"
-          onClick={resetForm}
-          className="resetButton"
-        >
-          {t('form.success.newVerification')}
-        </Button>
-      </div>
-    );
-  }
+  const { register } = form;
 
   return (
     <form 
@@ -72,15 +46,6 @@ export const VerificationForm: React.FC<VerificationFormProps> = ({ initialData 
       aria-label={t('form.ariaLabel')}
     >
 
-
-      {/* Error general del formulario */}
-      {error && (
-        <ErrorMessage
-          message={error}
-          type="error"
-          className="formError"
-        />
-      )}
 
       <div className="verificationForm__content">
         {/* Campo Nombre */}
@@ -166,33 +131,42 @@ export const VerificationForm: React.FC<VerificationFormProps> = ({ initialData 
 
       {/* CAPTCHA */}
       <div className="captchaContainer">
-        {isCaptchaLoaded ? (
-          <ReCAPTCHA
-            ref={captchaRef}
-            sitekey={getCaptchaSiteKey()}
-            onChange={(token) => token && onCaptchaSuccess(token)}
-            onExpired={onCaptchaExpired}
-            onErrored={() => onCaptchaError('CAPTCHA verification failed')}
-            theme="light"
-            size="normal"
-            hl={t('captcha.language')}
-            aria-label={t('captcha.ariaLabel')}
-          />
-        ) : (
-          <div className="captchaLoading">
-            <LoadingSpinner size="small" />
-            <span>{t('captcha.loading')}</span>
-          </div>
-        )}
-        
-        {captchaError && (
-          <ErrorMessage
-            message={captchaError}
-            type="error"
-            className="captchaError"
-          />
-        )}
+        <ReCAPTCHA
+          ref={captchaRef}
+          sitekey={getCaptchaSiteKey()}
+          onChange={(token) => {
+            token && onCaptchaSuccess(token);
+          }}
+          onExpired={() => {
+            onCaptchaExpired();
+          }}
+          onErrored={() => {
+            onCaptchaError('CAPTCHA verification failed');
+          }}
+          theme="light"
+          size="normal"
+          hl={t('captcha.language')}
+          aria-label={t('captcha.ariaLabel')}
+        />
       </div>
+
+      {/* Mensaje de éxito */}
+      {isSuccess && (
+        <ErrorMessage
+          message={t('form.success.message')}
+          type="info"
+          className="formSuccess"
+        />
+      )}
+
+      {/* Error general del formulario - debajo del captcha */}
+      {(error || captchaError) && !isSuccess && (
+        <ErrorMessage
+          message={error || captchaError || ''}
+          type="error"
+          className="formError"
+        />
+      )}
 
       {/* Botones del formulario */}
       <div className="verificationForm__actions">

@@ -1,7 +1,6 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import { VerificationForm } from './components/VerificationForm';
 import { ErrorFallback } from './components/ui/ErrorFallback';
-import { LoadingSpinner } from './components/ui/LoadingSpinner';
 import { Header } from './components/Header';
 import { useI18n } from './hooks/useI18n';
 import { getDecodedQueryParams } from './utils/queryParams';
@@ -24,11 +23,9 @@ class AppErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('App Error Boundary caught an error:', error, errorInfo);
-
     // Enviar error a servicio de monitoreo en producción
     if (process.env.NODE_ENV === 'production') {
-
+      // TODO: Enviar a servicio de monitoreo (Sentry, Datadog, etc.)
     }
   }
 
@@ -48,21 +45,19 @@ class AppErrorBoundary extends React.Component<
 
 interface AppProps {
   initialData?: any;
-  performanceConfig?: any;
 }
 
 /**
  * Componente principal de la aplicación
  * Maneja i18n, error boundaries y el layout principal
  */
-export const App: React.FC<AppProps> = memo(({ initialData, performanceConfig }) => {
-  const { t, i18n } = useI18n();
+export const App: React.FC<AppProps> = memo(({ initialData }) => {
+  const { t, i18n, changeLanguage } = useI18n();
 
   // Usar datos del servidor si están disponibles, sino extraer de query params
   const queryParams = useMemo(() => {
     // En SSR, usar datos del servidor
     if (initialData) {
-      console.log('🚀 Using SSR initial data:', initialData);
       return initialData;
     }
 
@@ -71,20 +66,22 @@ export const App: React.FC<AppProps> = memo(({ initialData, performanceConfig })
       // Primero intentar obtener de window.__INITIAL_DATA__
       const windowData = (window as any).__INITIAL_DATA__;
       if (windowData) {
-        console.log('🌐 Using window initial data:', windowData);
         return windowData;
       }
 
       // Fallback a query params
-      console.log('📄 Using query params fallback');
       return getDecodedQueryParams();
     }
 
     return {};
   }, [initialData]);
 
-  // Log para debugging
-  console.log('🎯 App rendering with data:', queryParams);
+  // Sincronizar idioma con el locale del servidor
+  useEffect(() => {
+    if (queryParams.locale && queryParams.locale !== i18n.language) {
+      changeLanguage(queryParams.locale);
+    }
+  }, [queryParams.locale, i18n.language, changeLanguage]);
 
   return (
     <AppErrorBoundary>

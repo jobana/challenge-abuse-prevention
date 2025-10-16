@@ -13,7 +13,6 @@ export const useI18n = () => {
    */
   const changeLanguage = useCallback(async (locale: SupportedLocale) => {
     if (!SUPPORTED_LOCALES.includes(locale)) {
-      console.warn(`Unsupported locale: ${locale}`);
       return;
     }
 
@@ -21,7 +20,7 @@ export const useI18n = () => {
       await i18n.changeLanguage(locale);
       saveLanguagePreference(locale);
     } catch (error) {
-      console.error('Error changing language:', error);
+      // Error silencioso - i18n fallback maneja los errores
     }
   }, [i18n]);
 

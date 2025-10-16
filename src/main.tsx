@@ -29,7 +29,6 @@ logger.info(`SSR render time: ${renderTime}ms`);
 if (process.env.NODE_ENV === 'development') {
   import('@axe-core/react').then((axe) => {
     axe.default(React, ReactDOM, 1000);
-    console.log('🔍 Axe-core accessibility testing enabled');
   });
 }
 
@@ -41,9 +40,8 @@ if (rootElement) {
     const root = ReactDOM.createRoot(rootElement);
     
     root.render(
-      React.createElement(App, { 
-        initialData,
-        performanceConfig 
+      React.createElement(App, {
+        initialData
       })
     );
     

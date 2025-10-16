@@ -1,6 +1,6 @@
 import { ApiClient, simulateLatency } from './base';
-import { User, UserResponse } from '@types/api.types';
-import { getMockUserResponse, searchUserByEmail, updateMockUser, validateUserData } from '@api/mocks/users.mock';
+import { User, UserResponse } from '../../types/api.types';
+import { getMockUserResponse, searchUserByEmail, updateMockUser, validateUserData } from '../mocks/users.mock';
 
 /**
  * Cliente para la API meli-users

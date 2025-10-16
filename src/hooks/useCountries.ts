@@ -10,11 +10,17 @@ interface UseCountriesState {
 
 /**
  * Hook simplificado para obtener lista de países
+ * Prioriza datos del SSR (window.__INITIAL_DATA__.countries) para performance
  */
 export const useCountries = (): UseCountriesState => {
+  // Intentar obtener países del servidor (SSR)
+  const serverCountries = typeof window !== 'undefined'
+    ? (window as any).__INITIAL_DATA__?.countries
+    : null;
+
   const [state, setState] = useState<UseCountriesState>({
-    countries: [],
-    loading: false,
+    countries: serverCountries || [],
+    loading: !serverCountries, // Solo loading si no hay datos del servidor
     error: null,
   });
 
@@ -37,10 +43,12 @@ export const useCountries = (): UseCountriesState => {
     }
   }, []);
 
-  // Cargar países al montar el componente
+  // Solo cargar si no hay datos del servidor
   useEffect(() => {
-    loadCountries();
-  }, [loadCountries]);
+    if (!serverCountries) {
+      loadCountries();
+    }
+  }, [serverCountries, loadCountries]);
 
   return state;
 };

@@ -1,6 +1,6 @@
 import { ApiClient, simulateLatency } from './base';
-import { Country, CountriesResponse } from '@types/api.types';
-import { getMockCountriesResponse, searchCountries, getCountryByCode } from '@api/mocks/countries.mock';
+import { Country, CountriesResponse } from '../../types/api.types';
+import { getMockCountriesResponse, searchCountries, getCountryByCode } from '../mocks/countries.mock';
 
 /**
  * Cliente para la API meli-countries

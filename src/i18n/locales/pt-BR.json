@@ -15,8 +15,8 @@
   },
   "form": {
     "ariaLabel": "Formulário de verificação de dados",
-    "title": "Verificação de Dados",
-    "description": "Por favor, complete as informações solicitadas para continuar com a verificação.",
+    "title": "Falta pouco...",
+    "description": "Atualize seus dados de contato.",
     "fields": {
       "name": {
         "label": "Nome completo",
@@ -50,9 +50,9 @@
       }
     },
     "actions": {
-      "submit": "Verificar Dados",
+      "submit": "Continuar",
       "submitting": "Verificando...",
-      "reset": "Limpar Formulário"
+      "reset": "Voltar"
     },
     "errors": {
       "captchaRequired": "Você deve completar a verificação CAPTCHA",
@@ -60,7 +60,7 @@
     },
     "success": {
       "title": "Verificação Bem-sucedida!",
-      "message": "Seus dados foram verificados corretamente. Você receberá uma confirmação por email.",
+      "message": "Seus dados foram verificados corretamente.",
       "newVerification": "Nova Verificação"
     },
     "footer": {
@@ -116,10 +116,5 @@
     "ssl_encrypted": "Conexão criptografada SSL",
     "privacy_policy": "Política de Privacidade",
     "terms_conditions": "Termos e Condições"
-  },
-  "noscript": {
-    "title": "Verificação de Dados",
-    "message": "Para continuar, habilite JavaScript no seu navegador.",
-    "support": "Se tiver problemas, entre em contato com o suporte."
   }
 }

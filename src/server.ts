@@ -1,12 +1,14 @@
 import express from 'express';
-import { render } from './entry-server.tsx';
-import { logger } from './utils/logger';
-import { getMockCountriesResponse } from './api/mocks/countries.mock.js';
-import { getExampleDataForCountry } from './api/mocks/users.mock.js';
 import compression from 'compression';
 import helmet from 'helmet';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+// Importar mocks compartidos
+import { MOCK_COUNTRIES } from './api/mocks/countries.mock.js';
+import { getExampleDataForCountry } from './api/mocks/users.mock.js';
+// Importar validadores
+import { validateVerificationData, sanitizeVerificationData } from './utils/validation.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,9 +27,17 @@ app.use(helmet({
         "https://www.google.com",
         "https://www.gstatic.com"
       ],
-      styleSrc: ["'self'", "'unsafe-inline'"],
+      styleSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://fonts.googleapis.com"  // Permitir Google Fonts
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com"  // Permitir fuentes de Google
+      ],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", "https://www.google.com"],
+      connectSrc: ["'self'", "https://www.google.com", "https://fonts.googleapis.com"],
       frameSrc: ["'self'", "https://www.google.com"],
     },
   },
@@ -41,31 +51,30 @@ app.use(compression());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Middleware para servir archivos estáticos
-app.use(express.static(path.join(__dirname, '../dist'), {
-  maxAge: '1y',
+// Middleware para servir archivos estáticos con MIME types configurados
+// Servir archivos de src (CSS, assets en desarrollo)
+app.use('/src', (req, res, next) => {
+  // Configurar MIME type correcto para archivos TypeScript/JavaScript
+  if (req.path.endsWith('.tsx') || req.path.endsWith('.ts')) {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  } else if (req.path.endsWith('.jsx') || req.path.endsWith('.js')) {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  } else if (req.path.endsWith('.css')) {
+    res.setHeader('Content-Type', 'text/css; charset=utf-8');
+  }
+  next();
+}, express.static(path.join(__dirname, '../src'), {
+  maxAge: process.env.NODE_ENV === 'production' ? '1y' : '0',
   etag: true,
   lastModified: true,
 }));
 
-// Middleware para logging de requests
-app.use((req, res, next) => {
-  const startTime = Date.now();
-  
-  res.on('finish', () => {
-    const duration = Date.now() - startTime;
-    logger.info('HTTP Request', {
-      method: req.method,
-      url: req.url,
-      status: res.statusCode,
-      duration: `${duration}ms`,
-      userAgent: req.get('User-Agent'),
-      ip: req.ip,
-    });
-  });
-  
-  next();
-});
+// Servir archivos estáticos de dist EXCEPTO index.html (que será servido por la ruta principal con SSR)
+app.use('/assets', express.static(path.join(__dirname, '../dist/assets'), {
+  maxAge: '1y',
+  etag: true,
+  lastModified: true,
+}));
 
 // Middleware para CORS
 app.use((req, res, next) => {
@@ -87,353 +96,85 @@ app.use((req, res, next) => {
   }
 });
 
-// Función para detectar idioma basado en el dominio
-function detectLanguage(req: express.Request): string {
+// Función para detectar idioma basado en dominio MercadoLibre
+// Esta función se ejecuta en el servidor para soporte No-Script (SSR)
+// En producción, detectará automáticamente por dominio (mercadolibre.com.ar vs mercadolivre.com.br)
+function detectLanguageFromDomain(req: express.Request): string {
   const host = req.get('host') || '';
   const referer = req.get('referer') || '';
-  
-  // Detectar por dominio
-  if (host.includes('mercadolibre.com.ar') || referer.includes('mercadolibre.com.ar')) {
-    return 'es-AR';
+
+  // Mapeo de dominios MercadoLibre (coincidencia exacta y parcial)
+  const domainMap: Record<string, string> = {
+    'mercadolibre.com.ar': 'es-AR',
+    'mercadolivre.com.br': 'pt-BR',
+    'mercadolibre.com.mx': 'es-AR', // México usa español
+    'mercadolibre.com.co': 'es-AR', // Colombia usa español
+    'mercadolibre.cl': 'es-AR',     // Chile usa español
+  };
+
+  // 1. Detectar por host exacto
+  for (const [domain, locale] of Object.entries(domainMap)) {
+    if (host === domain || host.endsWith(`.${domain}`)) {
+      console.log(`Language detected by host: ${host} -> ${locale}`);
+      return locale;
+    }
   }
-  
-  if (host.includes('mercadolivre.com.br') || referer.includes('mercadolivre.com.br')) {
-    return 'pt-BR';
+
+  // 2. Detectar por referer (cuando viene de otra página ML)
+  for (const [domain, locale] of Object.entries(domainMap)) {
+    if (referer.includes(domain)) {
+      console.log(`Language detected by referer: ${referer} -> ${locale}`);
+      return locale;
+    }
   }
-  
-  // Detectar por query parameter
-  const lang = req.query.lang as string;
+
+  // 3. Detectar por query parameter explícito
+  const lang = req.query.lang as string || req.query.locale as string;
   if (lang && ['es-AR', 'pt-BR'].includes(lang)) {
+    console.log(`Language detected by query: ${lang}`);
     return lang;
   }
-  
-  // Detectar por Accept-Language header
+
+  // 4. Detectar por Accept-Language header
   const acceptLanguage = req.get('Accept-Language') || '';
-  if (acceptLanguage.includes('pt')) {
+  if (acceptLanguage.includes('pt-BR') || acceptLanguage.includes('pt')) {
+    console.log(`Language detected by Accept-Language: pt-BR`);
     return 'pt-BR';
   }
-  
-  // Default a español
+
+  // 5. Detectar contexto por X-Forwarded-Host (para proxies/CDN)
+  const forwardedHost = req.get('X-Forwarded-Host') || req.get('X-Original-Host');
+  if (forwardedHost) {
+    for (const [domain, locale] of Object.entries(domainMap)) {
+      if (forwardedHost.includes(domain)) {
+        console.log(`Language detected by X-Forwarded-Host: ${forwardedHost} -> ${locale}`);
+        return locale;
+      }
+    }
+  }
+
+  // 6. Default a español (Argentina es el mercado principal)
+  console.log('Language fallback to es-AR');
   return 'es-AR';
 }
 
-// Ruta principal para SSR
-app.get('*', async (req, res) => {
-  try {
-    const startTime = Date.now();
-    
-    // Detectar idioma
-    const locale = detectLanguage(req);
-    
-    // Configuración de performance
-    const performanceConfig = {
-      CAPTCHA_LOAD_TIMEOUT: parseInt(process.env.CAPTCHA_LOAD_TIMEOUT || '10000'),
-      FORM_SUBMIT_TIMEOUT: parseInt(process.env.FORM_SUBMIT_TIMEOUT || '30000'),
-      API_TIMEOUT: parseInt(process.env.API_TIMEOUT || '8000'),
-      RENDER_TIMEOUT: parseInt(process.env.RENDER_TIMEOUT || '5000'),
-    };
-    
-    // Extraer query params para datos mock
-    const queryCountry = req.query.country as string;
-    const mockCountry = queryCountry && ['AR', 'BR'].includes(queryCountry) ? queryCountry :
-      (locale === 'pt-BR' ? 'BR' : 'AR');
-
-    // Obtener datos de ejemplo basados en el país
-    const exampleData = getExampleDataForCountry(mockCountry);
-
-    // Datos iniciales con mock data
-    const initialData = {
-      locale,
-      referrer: req.get('referer'),
-      userAgent: req.get('User-Agent'),
-      ip: req.ip,
-      timestamp: new Date().toISOString(),
-      // Incluir datos mock como ejemplo si no hay query params específicos
-      customerData: req.query.customerData ? JSON.parse(req.query.customerData as string) : exampleData?.customerData,
-      shippingData: req.query.shippingData ? JSON.parse(req.query.shippingData as string) : exampleData?.shippingData,
-      billingData: req.query.billingData ? JSON.parse(req.query.billingData as string) : exampleData?.billingData,
-      paymentData: req.query.paymentData ? JSON.parse(req.query.paymentData as string) : exampleData?.paymentData,
-      orderData: req.query.orderData ? JSON.parse(req.query.orderData as string) : exampleData?.orderData,
-      token: req.query.token as string || `demo_token_${Date.now()}`
-    };
-    
-    // Renderizar la aplicación
-    const { html, renderTime, error } = await render({
-      url: req.url,
-      initialData,
-      performanceConfig,
-    });
-    
-    const totalTime = Date.now() - startTime;
-    
-    // Log de performance
-    logger.performance('SSR Render', startTime, {
-      url: req.url,
-      locale,
-      renderTime,
-      totalTime,
-      error: !!error,
-    });
-    
-    // Enviar respuesta HTML
-    res.status(200).send(`
-      <!DOCTYPE html>
-      <html lang="${locale}">
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <meta name="description" content="Verificación de datos de usuario" />
-          <meta name="robots" content="noindex, nofollow" />
-          <title>Verificación de Datos</title>
-          <link rel="preconnect" href="https://www.google.com" />
-          <link rel="dns-prefetch" href="https://www.gstatic.com" />
-          <style>
-            /* Estilos críticos para no-script */
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-            .noscript-fallback { display: none; }
-            .noscript-fallback.noscript-active { display: block; }
-            .js-fallback { display: block; }
-            .js-fallback.js-active { display: none; }
-          </style>
-          <script>
-            window.__INITIAL_DATA__ = ${JSON.stringify(initialData)};
-            window.__PERFORMANCE_CONFIG__ = ${JSON.stringify(performanceConfig)};
-            window.__RENDER_TIME__ = ${renderTime};
-          </script>
-        </head>
-        <body>
-          <noscript>
-            <div class="noscript-fallback noscript-active">
-              <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);">
-                <div style="max-width: 32rem; width: 100%; background: white; border-radius: 0.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); overflow: hidden;">
-                  <div style="padding: 2rem 2rem 1rem 2rem; text-align: center; border-bottom: 1px solid #e5e7eb;">
-                    <h1 style="margin: 0 0 0.5rem 0; font-size: 1.5rem; font-weight: 700; color: #111827;">
-                      ${locale.startsWith('es') ? 'Verificación de Datos' : 'Verificação de Dados'}
-                    </h1>
-                    <p style="margin: 0; font-size: 1rem; color: #6b7280;">
-                      ${locale.startsWith('es') 
-                        ? 'Por favor, completa la información solicitada para continuar con la verificación.'
-                        : 'Por favor, complete as informações solicitadas para continuar com a verificação.'
-                      }
-                    </p>
-                  </div>
-                  <form action="/api/verification/submit" method="POST" style="padding: 2rem;">
-                    ${initialData?.token ? `<input type="hidden" name="token" value="${initialData.token}" />` : ''}
-                    ${initialData?.referrer ? `<input type="hidden" name="referrer" value="${initialData.referrer}" />` : ''}
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
-                        ${locale.startsWith('es') ? 'Nombre completo *' : 'Nome completo *'}
-                      </label>
-                      <input type="text" name="name" required minlength="2" maxlength="100" 
-                             style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
-                             placeholder="${locale.startsWith('es') ? 'Ingresa tu nombre completo' : 'Digite seu nome completo'}" />
-                    </div>
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
-                        ${locale.startsWith('es') ? 'País *' : 'País *'}
-                      </label>
-                      <select name="country" required style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                        <option value="">${locale.startsWith('es') ? 'Selecciona tu país' : 'Selecione seu país'}</option>
-                        <option value="AR">🇦🇷 Argentina</option>
-                        <option value="BR">🇧🇷 Brasil</option>
-                        <option value="MX">🇲🇽 México</option>
-                        <option value="CO">🇨🇴 ${locale.startsWith('es') ? 'Colombia' : 'Colômbia'}</option>
-                        <option value="CL">🇨🇱 Chile</option>
-                        <option value="PE">🇵🇪 ${locale.startsWith('es') ? 'Perú' : 'Peru'}</option>
-                        <option value="UY">🇺🇾 ${locale.startsWith('es') ? 'Uruguay' : 'Uruguai'}</option>
-                        <option value="PY">🇵🇾 ${locale.startsWith('es') ? 'Paraguay' : 'Paraguai'}</option>
-                        <option value="BO">🇧🇴 ${locale.startsWith('es') ? 'Bolivia' : 'Bolívia'}</option>
-                        <option value="EC">🇪🇨 ${locale.startsWith('es') ? 'Ecuador' : 'Equador'}</option>
-                        <option value="VE">🇻🇪 Venezuela</option>
-                        <option value="CR">🇨🇷 Costa Rica</option>
-                        <option value="PA">🇵🇦 Panamá</option>
-                        <option value="GT">🇬🇹 Guatemala</option>
-                        <option value="HN">🇭🇳 Honduras</option>
-                        <option value="SV">🇸🇻 El Salvador</option>
-                        <option value="NI">🇳🇮 ${locale.startsWith('es') ? 'Nicaragua' : 'Nicarágua'}</option>
-                        <option value="CU">🇨🇺 Cuba</option>
-                        <option value="DO">🇩🇴 República Dominicana</option>
-                        <option value="PR">🇵🇷 ${locale.startsWith('es') ? 'Puerto Rico' : 'Porto Rico'}</option>
-                      </select>
-                    </div>
-                    
-                    <div style="margin-bottom: 1.5rem;">
-                      <label style="display: block; margin-bottom: 0.5rem; font-size: 0.875rem; font-weight: 500; color: #111827;">
-                        ${locale.startsWith('es') ? 'Dirección *' : 'Endereço *'}
-                      </label>
-                      <input type="text" name="address" required minlength="10" maxlength="200"
-                             style="width: 100%; padding: 0.75rem 1rem; font-size: 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"
-                             placeholder="${locale.startsWith('es') ? 'Ingresa tu dirección completa' : 'Digite seu endereço completo'}" />
-                    </div>
-                    
-                    <div style="margin: 2rem 0; padding: 1.5rem; background: #fffbeb; border: 1px solid #fed7aa; border-radius: 0.375rem; text-align: center;">
-                      <p style="margin: 0; font-size: 0.875rem; color: #c2410c; font-weight: 500;">
-                        ${locale.startsWith('es') 
-                          ? 'Para continuar, habilita JavaScript en tu navegador para completar la verificación de seguridad.'
-                          : 'Para continuar, habilite JavaScript no seu navegador para completar a verificação de segurança.'
-                        }
-                      </p>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: center; margin: 2rem 0 1.5rem 0;">
-                      <button type="submit" disabled style="padding: 0.75rem 2rem; font-size: 1rem; font-weight: 500; color: white; background: #9ca3af; border: none; border-radius: 0.375rem; cursor: not-allowed;">
-                        ${locale.startsWith('es') ? 'Verificar Datos' : 'Verificar Dados'}
-                      </button>
-                    </div>
-                    
-                    <div style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
-                      <p style="margin: 0 0 0.5rem 0; font-size: 0.875rem; color: #9ca3af;">
-                        ${locale.startsWith('es') 
-                          ? 'Tus datos están protegidos y solo se utilizan para la verificación.'
-                          : 'Seus dados estão protegidos e são usados apenas para verificação.'
-                        }
-                      </p>
-                      <p style="margin: 0; font-size: 0.875rem; color: #9ca3af;">
-                        ${locale.startsWith('es') 
-                          ? 'Los campos marcados con * son obligatorios.'
-                          : 'Os campos marcados com * são obrigatórios.'
-                        }
-                      </p>
-                    </div>
-                  </form>
-                </div>
-              </div>
-            </div>
-          </noscript>
-          
-          <div id="root" class="js-fallback">${html}</div>
-          <script type="module" src="/src/main.tsx"></script>
-        </body>
-      </html>
-    `);
-    
-  } catch (error) {
-    logger.error('SSR Error', {
-      url: req.url,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    
-    res.status(500).send(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          <title>Error - Verificación de Datos</title>
-        </head>
-        <body>
-          <div id="root">
-            <div style="padding: 2rem; text-align: center;">
-              <h1>Error del Servidor</h1>
-              <p>Ha ocurrido un error inesperado. Por favor, intenta nuevamente.</p>
-              <button onclick="window.location.reload()">Recargar Página</button>
-            </div>
-          </div>
-        </body>
-      </html>
-    `);
-  }
-});
-
-// API endpoint para verificación
-app.post('/api/verification/submit', async (req, res) => {
-  try {
-    const {
-      name,
-      country,
-      address,
-      captchaToken,
-      referrer,
-      token,
-      customerData,
-      shippingData,
-      billingData,
-      paymentData,
-      orderData
-    } = req.body;
-
-    // Validar datos requeridos
-    if (!name || !country || !address || !captchaToken) {
-      return res.status(400).json({
-        success: false,
-        message: 'Faltan datos requeridos',
-        errors: ['name', 'country', 'address', 'captchaToken'].filter(field => !req.body[field]),
-      });
-    }
-    
-    // Aquí podrías validar el CAPTCHA con Google
-    // const captchaValid = await validateCaptcha(captchaToken);
-    // if (!captchaValid) {
-    //   return res.status(400).json({
-    //     success: false,
-    //     message: 'Verificación CAPTCHA fallida',
-    //   });
-    // }
-    
-    // Simular procesamiento
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    logger.info('Verification submitted', {
-      name,
-      country,
-      address,
-      referrer,
-      token,
-      hasCustomerData: !!customerData,
-      hasShippingData: !!shippingData,
-      hasBillingData: !!billingData,
-      hasPaymentData: !!paymentData,
-      hasOrderData: !!orderData,
-      ip: req.ip,
-      userAgent: req.get('User-Agent'),
-    });
-
-    // Generar orderId único para la respuesta
-    const orderId = `ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    res.json({
-      success: true,
-      orderId,
-      message: 'Verificación completada exitosamente',
-      data: {
-        id: `verification_${Date.now()}`,
-        timestamp: new Date().toISOString(),
-      },
-    });
-    
-  } catch (error) {
-    logger.error('Verification API Error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      body: req.body,
-    });
-    
-    res.status(500).json({
-      success: false,
-      message: 'Error interno del servidor',
-    });
-  }
-});
-
 // API endpoint para obtener países usando mocks
-app.get('/api/countries', async (req, res) => {
+app.get('/api/countries', async (_req, res) => {
   try {
-    const countries = await getMockCountriesResponse();
+    // Simular latencia de API
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     res.json({
       success: true,
-      data: countries,
+      data: MOCK_COUNTRIES,
     });
 
   } catch (error) {
-    logger.error('Countries API Error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    });
+    console.error('❌ Countries API Error:', error);
 
     res.status(500).json({
       success: false,
+      code: 'INTERNAL_SERVER_ERROR',
       message: 'Error al obtener países',
     });
   }
@@ -444,18 +185,31 @@ app.get('/api/example-data/:country', async (req, res) => {
   try {
     const { country } = req.params;
 
-    if (!['AR', 'BR'].includes(country)) {
+    // Validar país
+    if (!country || typeof country !== 'string') {
       return res.status(400).json({
         success: false,
+        code: 'INVALID_COUNTRY',
+        message: 'Country parameter is required',
+      });
+    }
+
+    const upperCountry = country.toUpperCase();
+
+    if (!['AR', 'BR'].includes(upperCountry)) {
+      return res.status(400).json({
+        success: false,
+        code: 'UNSUPPORTED_COUNTRY',
         message: 'País no soportado. Solo se permiten AR y BR.',
       });
     }
 
-    const exampleData = getExampleDataForCountry(country);
+    const exampleData = getExampleDataForCountry(upperCountry);
 
     if (!exampleData) {
       return res.status(404).json({
         success: false,
+        code: 'DATA_NOT_FOUND',
         message: 'No se encontraron datos de ejemplo para el país especificado.',
       });
     }
@@ -466,40 +220,194 @@ app.get('/api/example-data/:country', async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Example Data API Error', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-      country: req.params.country,
-    });
+    console.error('❌ Example Data API Error:', error);
 
     res.status(500).json({
       success: false,
+      code: 'INTERNAL_SERVER_ERROR',
       message: 'Error al obtener datos de ejemplo',
     });
   }
 });
 
-// Manejo de errores global
-app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
-  logger.error('Express Error', {
-    error: error.message,
-    stack: error.stack,
-    url: req.url,
-    method: req.method,
+// API endpoint para verificación
+app.post('/api/verification/submit', async (req, res) => {
+  try {
+    const { name, country, address, captchaToken } = req.body;
+
+    // 1. Validar estructura y formato de datos
+    const validationErrors = validateVerificationData({
+      name,
+      country,
+      address,
+      captchaToken,
+    });
+
+    if (validationErrors.length > 0) {
+      console.warn('Validation failed:', validationErrors);
+      return res.status(400).json({
+        success: false,
+        code: 'VALIDATION_ERROR',
+        message: 'Invalid request data',
+        errors: validationErrors,
+      });
+    }
+
+    // 2. Sanitizar datos para prevenir XSS
+    const sanitizedData = sanitizeVerificationData({
+      name,
+      country,
+      address,
+      captchaToken,
+    });
+
+    // 3. Simular procesamiento
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    console.log('✅ Verification submitted:', {
+      ...sanitizedData,
+      ip: req.ip,
+      userAgent: req.get('User-Agent'),
+    });
+
+    // 4. Retornar respuesta exitosa
+    res.json({
+      success: true,
+      message: 'Verificación completada exitosamente',
+      data: {
+        id: `verification_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+      },
+    });
+
+  } catch (error) {
+    console.error('❌ Verification API Error:', error);
+
+    // Diferenciar errores internos (500) de errores del cliente (ya manejados con 400)
+    res.status(500).json({
+      success: false,
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Error interno del servidor',
+    });
+  }
+});
+
+// Configuración de países soportados
+const SUPPORTED_COUNTRIES = {
+  AR: { locale: 'es-AR', currency: 'ARS' },
+  BR: { locale: 'pt-BR', currency: 'BRL' },
+  // Fácilmente extensible para más países:
+  // MX: { locale: 'es-MX', currency: 'MXN' },
+  // CO: { locale: 'es-CO', currency: 'COP' },
+} as const;
+
+const DEFAULT_COUNTRY = 'AR';
+
+// Ruta principal - servir el archivo HTML con inyección de datos
+app.get('/:country([A-Z]{2})?', (req, res) => {
+  // 1. Extraer país de la ruta (ej: /AR, /BR)
+  const countryFromPath = req.params.country?.toUpperCase() as keyof typeof SUPPORTED_COUNTRIES;
+
+  // 2. Validar que el país esté soportado
+  const country = countryFromPath && SUPPORTED_COUNTRIES[countryFromPath]
+    ? countryFromPath
+    : DEFAULT_COUNTRY;
+
+  // 3. Determinar locale con prioridad:
+  //    - Si hay país en la ruta (/BR, /AR): usar su locale
+  //    - Si no: detectar por dominio/headers (para producción)
+  //    - Fallback: usar locale del país default
+  const countryConfig = SUPPORTED_COUNTRIES[country];
+  const detectedLocale = detectLanguageFromDomain(req);
+  const locale = countryFromPath
+    ? countryConfig.locale  // Ruta explícita tiene prioridad
+    : detectedLocale;        // Sino, usar detección automática
+
+  // Obtener datos de ejemplo basados en el país
+  const exampleData = getExampleDataForCountry(country);
+
+  // Extraer query params - referrer (número) y token (string)
+  const referrerParam = req.query.referrer as string;
+  const referrer = referrerParam ? parseInt(referrerParam, 10) : 1; // Default: paso 1
+  const token = (req.query.token as string) || `demo_token_${Date.now()}`;
+
+  // Datos iniciales con mock data
+  const initialData = {
+    locale,
+    country,
+    referrer,
+    token,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip,
+    timestamp: new Date().toISOString(),
+    // Incluir datos mock como ejemplo
+    customerData: exampleData?.customerData,
+    shippingData: exampleData?.shippingData,
+    billingData: exampleData?.billingData,
+    paymentData: exampleData?.paymentData,
+    orderData: exampleData?.orderData,
+    // Incluir países para evitar fetch en cliente (performance)
+    countries: MOCK_COUNTRIES,
+  };
+
+  // Configuración de performance
+  const performanceConfig = {
+    CAPTCHA_LOAD_TIMEOUT: parseInt(process.env.CAPTCHA_LOAD_TIMEOUT || '10000'),
+    FORM_SUBMIT_TIMEOUT: parseInt(process.env.FORM_SUBMIT_TIMEOUT || '30000'),
+    API_TIMEOUT: parseInt(process.env.API_TIMEOUT || '8000'),
+    RENDER_TIMEOUT: parseInt(process.env.RENDER_TIMEOUT || '5000'),
+  };
+
+  // Leer el index.html - usar dist si existe, sino el root
+  const distIndexPath = path.join(__dirname, '../dist/index.html');
+  const rootIndexPath = path.join(__dirname, '../index.html');
+
+  // Preferir dist/index.html si existe (build hecho)
+  const indexPath = fs.existsSync(distIndexPath) ? distIndexPath : rootIndexPath;
+
+  fs.readFile(indexPath, 'utf8', (err: Error | null, html: string) => {
+    if (err) {
+      console.error('Error reading index.html:', err);
+      return res.status(500).send('Error loading page');
+    }
+
+    // Inyectar datos iniciales en el HTML
+    const modifiedHtml = html
+      .replace('<html lang="es">', `<html lang="${locale}">`)
+      .replace('</head>', `
+        <script>
+          window.__INITIAL_DATA__ = ${JSON.stringify(initialData)};
+          window.__PERFORMANCE_CONFIG__ = ${JSON.stringify(performanceConfig)};
+        </script>
+      </head>`);
+
+    res.status(200).send(modifiedHtml);
   });
-  
+});
+
+
+// Manejo de errores global
+app.use((error: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('❌ Express Error:', error);
+
+  // Si ya se envió la respuesta, pasar al siguiente manejador
+  if (res.headersSent) {
+    return next(error);
+  }
+
   res.status(500).json({
     success: false,
+    code: 'INTERNAL_SERVER_ERROR',
     message: 'Error interno del servidor',
   });
 });
 
 // Iniciar servidor
 app.listen(PORT, () => {
-  logger.info('Server started', {
-    port: PORT,
-    environment: process.env.NODE_ENV || 'development',
-    nodeVersion: process.version,
-  });
+  const usingDist = fs.existsSync(path.join(__dirname, '../dist/index.html'));
+  if (!usingDist) {
+    console.log(`⚠️  Run 'npm run build' first to use compiled assets`);
+  }
 });
 
 export default app;

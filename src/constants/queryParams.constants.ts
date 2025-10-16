@@ -9,17 +9,6 @@ export const QUERY_PARAMS = {
   STEP: 'step',
 } as const;
 
-export const DEFAULT_QUERY_PARAMS = {
-  [QUERY_PARAMS.CUSTOMER_DATA]: null,
-  [QUERY_PARAMS.SHIPPING_DATA]: null,
-  [QUERY_PARAMS.BILLING_DATA]: null,
-  [QUERY_PARAMS.PAYMENT_DATA]: null,
-  [QUERY_PARAMS.ORDER_DATA]: null,
-  [QUERY_PARAMS.REFERRER]: '/',
-  [QUERY_PARAMS.TOKEN]: '',
-  [QUERY_PARAMS.STEP]: 'verification',
-} as const;
-
 export const QUERY_PARAM_ENCODING = {
   ENCODE: true,
   DECODE: true,

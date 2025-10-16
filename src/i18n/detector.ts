@@ -74,7 +74,7 @@ export const detectLanguageFromStorage = (): SupportedLocale | null => {
       return stored;
     }
   } catch (error) {
-    console.warn('Error reading from localStorage:', error);
+    // Error silencioso
   }
   
   return null;
@@ -168,7 +168,7 @@ export const saveLanguagePreference = (locale: SupportedLocale): void => {
   try {
     localStorage.setItem('i18nextLng', locale);
   } catch (error) {
-    console.warn('Error saving language preference:', error);
+    // Error silencioso
   }
 };
 

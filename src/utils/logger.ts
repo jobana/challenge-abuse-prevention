@@ -18,6 +18,11 @@ class Logger {
       console.debug(`[DEBUG] ${message}`, data || '');
     }
   }
+
+  performance(message: string, startTime: number, data?: any): void {
+    const duration = Date.now() - startTime;
+    console.log(`[PERFORMANCE] ${message} - ${duration}ms`, data || '');
+  }
 }
 
 export const logger = new Logger();

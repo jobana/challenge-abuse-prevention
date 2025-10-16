@@ -17,7 +17,11 @@ const resources = {
 };
 
 // Detectar idioma inicial
-const detectedLanguage = detectLanguage();
+// Prioridad: 1. Servidor (SSR) -> 2. Cliente (detección en navegador)
+const serverLocale = typeof window !== 'undefined'
+  ? (window as any).__INITIAL_DATA__?.locale
+  : null;
+const detectedLanguage = serverLocale || detectLanguage();
 
 i18n
   .use(LanguageDetector)

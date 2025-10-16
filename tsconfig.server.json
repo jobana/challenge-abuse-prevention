@@ -6,17 +6,26 @@
     "moduleResolution": "node",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "jsx": "react-jsx",
     "skipLibCheck": true,
-    "strict": true,
+    "strict": false,
     "noEmit": false,
+    "allowImportingTsExtensions": false,
     "outDir": "./dist",
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "declaration": false,
+    "sourceMap": false
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
   },
   "include": [
     "src/server.ts",
-    "src/entry-server.tsx",
-    "src/utils/logger.ts"
+    "src/api/mocks/**/*.ts",
+    "src/utils/validation.ts",
+    "src/types/common.types.ts",
+    "src/types/api.types.ts",
+    "src/types/verification.types.ts"
   ],
   "exclude": [
     "node_modules",

@@ -50,9 +50,9 @@
       }
     },
     "actions": {
-      "submit": "Verificar Datos",
+      "submit": "Continuar",
       "submitting": "Verificando...",
-      "reset": "Limpiar Formulario"
+      "reset": "Volver"
     },
     "errors": {
       "captchaRequired": "Debes completar la verificación CAPTCHA",
@@ -60,7 +60,7 @@
     },
     "success": {
       "title": "¡Verificación Exitosa!",
-      "message": "Tus datos han sido verificados correctamente. Recibirás una confirmación por email.",
+      "message": "Tus datos han sido verificados correctamente.",
       "newVerification": "Nueva Verificación"
     },
     "footer": {
@@ -116,10 +116,5 @@
     "ssl_encrypted": "Conexión encriptada SSL",
     "privacy_policy": "Política de Privacidad",
     "terms_conditions": "Términos y Condiciones"
-  },
-  "noscript": {
-    "title": "Verificación de Datos",
-    "message": "Para continuar, habilita JavaScript en tu navegador.",
-    "support": "Si tienes problemas, contacta soporte."
   }
 }

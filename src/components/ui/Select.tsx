@@ -266,7 +266,7 @@ export const Select = forwardRef<HTMLDivElement, SelectProps>(
                   </svg>
                 </div>
               ) : (
-                <svg className={`select__arrow ${isOpen ? 'select__arrow--open' : ''}`} aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="rgba(0, 0, 0, 0.9)"><path d="M9.35229 3.70447L6.00004 7.05672L2.64779 3.70447L1.85229 4.49996L6.00004 8.64771L10.1478 4.49996L9.35229 3.70447Z" fill="rgba(0, 0, 0, 0.9)"></path></svg>
+                <svg className={`select__arrow ${isOpen ? 'select__arrow--open' : ''}`} aria-hidden="true" width="12" height="12" viewBox="0 0 12 12" fill="#2d74e5"><path d="M9.35229 3.70447L6.00004 7.05672L2.64779 3.70447L1.85229 4.49996L6.00004 8.64771L10.1478 4.49996L9.35229 3.70447Z" fill="#2d74e5"></path></svg>
               )}
             </div>
           </div>

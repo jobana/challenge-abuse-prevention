@@ -1,61 +1,59 @@
-import { QueryParams, DecodedQueryParams } from '@types/queryParams.types';
-import { QUERY_PARAMS, QUERY_PARAM_ENCODING } from '@constants/queryParams.constants';
+import { QueryParams, DecodedQueryParams } from '../types/queryParams.types';
+import { QUERY_PARAMS, QUERY_PARAM_ENCODING } from '../constants/queryParams.constants';
 
 export const encodeQueryParam = (value: any): string => {
   if (!value) return '';
-  
+
   try {
     const jsonString = JSON.stringify(value);
     return QUERY_PARAM_ENCODING.ENCODE ? encodeURIComponent(jsonString) : jsonString;
   } catch (error) {
-    console.error('Error encoding query param:', error);
     return '';
   }
 };
 
 export const decodeQueryParam = (value: string): any => {
   if (!value) return null;
-  
+
   try {
     const decodedString = QUERY_PARAM_ENCODING.DECODE ? decodeURIComponent(value) : value;
     return JSON.parse(decodedString);
   } catch (error) {
-    console.error('Error decoding query param:', error);
     return null;
   }
 };
 
 export const getQueryParams = (): QueryParams => {
   if (typeof window === 'undefined') return {};
-  
+
   const urlParams = new URLSearchParams(window.location.search);
-  const params: QueryParams = {};
-  
+  const params: any = {};
+
   Object.values(QUERY_PARAMS).forEach(key => {
     const value = urlParams.get(key);
     if (value) {
-      params[key as keyof QueryParams] = value;
+      params[key] = value;
     }
   });
-  
-  return params;
+
+  return params as QueryParams;
 };
 
 export const getDecodedQueryParams = (): DecodedQueryParams => {
   const params = getQueryParams();
-  const decoded: DecodedQueryParams = {};
-  
+  const decoded: any = {};
+
   Object.entries(params).forEach(([key, value]) => {
     if (value) {
       if (key.includes('Data')) {
-        decoded[key as keyof DecodedQueryParams] = decodeQueryParam(value);
+        decoded[key] = decodeQueryParam(value);
       } else {
-        decoded[key as keyof DecodedQueryParams] = value;
+        decoded[key] = value;
       }
     }
   });
-  
-  return decoded;
+
+  return decoded as DecodedQueryParams;
 };
 
 export const updateQueryParam = (key: keyof QueryParams, value: any): void => {

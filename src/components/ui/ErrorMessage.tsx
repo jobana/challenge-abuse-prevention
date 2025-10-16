@@ -47,7 +47,7 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
       case 'info':
         return (
           <div className="message__info-icon" aria-hidden="true">
-            i
+            ✓
           </div>
         );
       default:

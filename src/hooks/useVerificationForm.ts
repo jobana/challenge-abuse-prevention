@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useCountries } from './useCountries';
 import { useCaptcha } from './useCaptcha';
 import { DecodedQueryParams } from '../types/queryParams.types';
-import { buildQueryString } from '../utils/queryParams';
+import { createMicrofrontendOutput, sendMicrofrontendOutput } from '../utils/microfrontendOutput';
 
 // Tipos para el formulario
 export interface VerificationFormData {
@@ -24,10 +24,10 @@ export interface VerificationFormState {
 export const useVerificationForm = (initialData?: DecodedQueryParams) => {
   const { t } = useTranslation();
   const { countries, loading: countriesLoading, error: countriesError } = useCountries();
-  const { 
-    captchaRef, 
-    isCaptchaLoaded, 
-    isCaptchaVerified, 
+  const {
+    captchaRef,
+    isCaptchaVerified,
+    captchaToken,
     captchaError,
     resetCaptcha,
     executeCaptcha,
@@ -62,7 +62,9 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
     resolver: yupResolver(validationSchema),
     mode: 'onBlur',
     defaultValues: {
-      name: initialData?.customerData?.firstName || '',
+      name: initialData?.customerData
+        ? `${initialData.customerData.firstName || ''} ${initialData.customerData.lastName || ''}`.trim()
+        : '',
       country: initialData?.customerData?.country || '',
       address: initialData?.shippingData?.address || '',
     },
@@ -82,15 +84,12 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
     try {
       setFormState(prev => ({ ...prev, isSubmitting: true, error: null }));
 
-      // Verificar CAPTCHA
-      if (!isCaptchaVerified) {
-        const captchaToken = await executeCaptcha();
-        if (!captchaToken) {
-          throw new Error(t('form.errors.captchaRequired'));
-        }
+      // Verificar CAPTCHA - el usuario debe haber hecho clic en el checkbox
+      if (!isCaptchaVerified || !captchaToken) {
+        throw new Error(t('form.errors.captchaRequired'));
       }
 
-      // Simular envío a la API
+      // Enviar a la API
       const response = await fetch('/api/verification/submit', {
         method: 'POST',
         headers: {
@@ -98,7 +97,7 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
         },
         body: JSON.stringify({
           ...data,
-          captchaToken: isCaptchaVerified || await executeCaptcha(),
+          captchaToken: captchaToken,
           referrer: initialData?.referrer || '/',
           token: initialData?.token || '',
           customerData: initialData?.customerData || {},
@@ -122,24 +121,21 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
         isSuccess: true
       }));
 
-      // Redirigir con token de captcha y referrer original
-      const captchaToken = isCaptchaVerified || await executeCaptcha();
-      const redirectParams = {
-        token: captchaToken,
-        referrer: initialData?.referrer || '/',
-        orderId: result.orderId || '',
-      };
+      // Crear y enviar output del microfrontend
+      const microfrontendOutput = createMicrofrontendOutput(
+        initialData?.referrer || 1,  // referrer como número
+        captchaToken || '',
+        true,  // verified = true porque llegó exitosamente
+        {
+          name: data.name,
+          country: data.country,
+          address: data.address,
+          verificationId: result.data?.id,
+          timestamp: result.data?.timestamp,
+        }
+      );
 
-      const redirectUrl = `${initialData?.referrer || '/'}${buildQueryString(redirectParams)}`;
-
-      // Redirigir después de un breve delay para que el usuario vea el éxito
-      setTimeout(() => {
-        window.location.href = redirectUrl;
-      }, 2000);
-
-      // Resetear formulario después del éxito
-      reset();
-      resetCaptcha();
+      sendMicrofrontendOutput(microfrontendOutput);
 
     } catch (error) {
       const errorMessage = error instanceof Error 
@@ -152,10 +148,9 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
         error: errorMessage 
       }));
 
-      // Si es un error de validación del servidor, mostrarlo en el campo correspondiente
+      // error de validación del servidor
       if (error instanceof Error && error.message.includes('validation')) {
-        // Aquí podrías parsear el error y usar setError para campos específicos
-        console.error('Validation error:', error.message);
+        
       }
     }
   };
@@ -177,7 +172,7 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
     try {
       await form.trigger(fieldName);
     } catch (error) {
-      console.error(`Error validating field ${fieldName}:`, error);
+      // Error silencioso - react-hook-form maneja los errores de validación
     }
   };
 
@@ -212,7 +207,6 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
     
     // CAPTCHA
     captchaRef,
-    isCaptchaLoaded,
     isCaptchaVerified,
     captchaError,
     resetCaptcha,

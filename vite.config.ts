@@ -20,12 +20,8 @@ export default defineConfig({
   build: {
     rollupOptions: {
       input: {
-        main: './index.html',
-        server: './src/entry-server.tsx'
+        main: './index.html'
       }
     }
-  },
-  ssr: {
-    noExternal: ['react', 'react-dom']
   }
 });
