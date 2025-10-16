@@ -9,8 +9,8 @@ Microfrontend autónomo para verificación de datos de usuario con soporte multi
 - **Internacionalización (i18n)** - es-AR y pt-BR con detección automática
 - **Google reCAPTCHA v2** para prevención de bots
 - **Validación** client-side (Yup + React Hook Form) y server-side
-- **Diseño responsive** - Mobile-first con breakpoints de MercadoLibre
-- **Accesibilidad** - WCAG AAA con axe-core testing
+- **Diseño responsive** - Mobile-first con breakpoints
+- **Accesibilidad** - WCAG AA con axe-core testing
 - **Seguridad** - Helmet.js, CSP, CORS, sanitización XSS
 
 ## 📋 Requisitos
@@ -254,17 +254,10 @@ El sistema detecta automáticamente el idioma con el siguiente orden de priorida
 
 ### 📱 Responsive Design
 
-Breakpoints de MercadoLibre:
-- **280px**: Pantallas muy pequeñas
-- **640px**: Mobile grande
-- **817px**: Tablet pequeño
-- **992px**: Tablet/Desktop pequeño
-- **1064px**: Desktop
 
 ### ♿ Accesibilidad
 
-- **WCAG AAA**: Contraste de colores cumple estándar más alto
-- **ARIA** labels y roles en todos los elementos
+- **WCAG AA**: Contraste de colores 
 - **Keyboard navigation**: Tab, Enter, Escape
 - **Screen reader** compatible
 - **axe-core** testing automático en desarrollo
@@ -418,23 +411,16 @@ NODE_ENV=production npm start
 ### Herramientas de desarrollo
 - **React DevTools** - Inspección de componentes
 - **axe DevTools** - Testing de accesibilidad
-- **Lighthouse** - Auditoría de performance
 - **Console Output** - Evidencia de salida del microfrontend
 
 ---
 
 ## 📝 Notas Importantes
 
-1. **reCAPTCHA v2**: Se usa la versión 2 (checkbox) según prototipo. No cambiar a v3.
+1. **reCAPTCHA v2**: Se usa la versión 2 (checkbox) según prototipo.
 2. **Datos Mock**: Los datos precargados son solo para demo. En producción vendrán de los servicios reales.
 3. **Salida Provisional**: El `console.log` de salida es temporal. Será reemplazado por la integración real (postMessage, redirect, etc.).
 4. **Idiomas Soportados**: Actualmente es-AR y pt-BR. Fácilmente extensible a otros países de LATAM.
 
-## 📜 Licencia
 
-Proyecto interno de MercadoLibre.
 
----
-
-**Versión:** 1.0.0
-**Última actualización:** 2025-10-16

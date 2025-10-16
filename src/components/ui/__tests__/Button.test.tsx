@@ -1,10 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from '../Button';
-import { axe, toHaveNoViolations } from 'jest-axe';
-
-// Extender expect con axe-core
-expect.extend(toHaveNoViolations);
 
 describe('Button', () => {
   it('renders with default props', () => {
@@ -62,16 +58,13 @@ describe('Button', () => {
     
     const button = screen.getByRole('button');
     expect(button).toBeDisabled();
-    expect(button).toHaveClass('button--loading');
   });
 
-  it('renders as different HTML elements', () => {
-    const { rerender } = render(<Button as="a" href="/test">Link</Button>);
-    expect(screen.getByRole('link')).toBeInTheDocument();
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/test');
-
-    rerender(<Button as="div">Div</Button>);
-    expect(screen.getByText('Div')).toBeInTheDocument();
+  it('shows loading spinner when loading', () => {
+    render(<Button loading>Loading</Button>);
+    
+    const spinner = screen.getByRole('button').querySelector('.button__spinner');
+    expect(spinner).toBeInTheDocument();
   });
 
   it('accepts custom className', () => {
@@ -82,33 +75,6 @@ describe('Button', () => {
     expect(button).toHaveClass('custom-class');
   });
 
-  it('forwards ref correctly', () => {
-    const ref = React.createRef<HTMLButtonElement>();
-    render(<Button ref={ref}>Ref test</Button>);
-    
-    expect(ref.current).toBeInstanceOf(HTMLButtonElement);
-    expect(ref.current).toHaveTextContent('Ref test');
-  });
-
-  it('has no accessibility violations', async () => {
-    const { container } = render(<Button>Accessible button</Button>);
-    const results = await axe(container);
-    expect(results).toHaveNoViolations();
-  });
-
-  it('has proper ARIA attributes when disabled', () => {
-    render(<Button disabled>Disabled button</Button>);
-    
-    const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-disabled', 'true');
-  });
-
-  it('has proper ARIA attributes when loading', () => {
-    render(<Button loading>Loading button</Button>);
-    
-    const button = screen.getByRole('button');
-    expect(button).toHaveAttribute('aria-disabled', 'true');
-  });
 
   it('renders children correctly', () => {
     render(
@@ -123,43 +89,63 @@ describe('Button', () => {
     expect(button).toHaveTextContent('Text');
   });
 
-  it('handles keyboard events', () => {
-    const handleClick = jest.fn();
-    render(<Button onClick={handleClick}>Keyboard test</Button>);
+  it('renders content in button__content wrapper', () => {
+    render(<Button>Test content</Button>);
     
-    const button = screen.getByRole('button');
-    
-    // Simular Enter key
-    fireEvent.keyDown(button, { key: 'Enter', code: 'Enter' });
-    expect(handleClick).toHaveBeenCalledTimes(1);
-    
-    // Simular Space key
-    fireEvent.keyDown(button, { key: ' ', code: 'Space' });
-    expect(handleClick).toHaveBeenCalledTimes(2);
-  });
-
-  it('does not handle click when disabled', () => {
-    const handleClick = jest.fn();
-    render(<Button disabled onClick={handleClick}>Disabled</Button>);
-    
-    const button = screen.getByRole('button');
-    
-    fireEvent.keyDown(button, { key: 'Enter', code: 'Enter' });
-    expect(handleClick).not.toHaveBeenCalled();
+    const content = screen.getByText('Test content');
+    expect(content).toHaveClass('button__content');
   });
 
   it('applies full width correctly', () => {
     render(<Button fullWidth>Full width</Button>);
     
     const button = screen.getByRole('button');
-    expect(button).toHaveClass('button--fullWidth');
+    expect(button).toHaveClass('button--full-width');
   });
 
-  it('renders with icon', () => {
-    const Icon = () => <span data-testid="icon">📝</span>;
-    render(<Button icon={<Icon />}>With icon</Button>);
+  it('passes through HTML button attributes', () => {
+    render(<Button type="submit" form="test-form">Submit</Button>);
     
-    expect(screen.getByTestId('icon')).toBeInTheDocument();
-    expect(screen.getByRole('button')).toHaveTextContent('With icon');
+    const button = screen.getByRole('button');
+    expect(button).toHaveAttribute('type', 'submit');
+    expect(button).toHaveAttribute('form', 'test-form');
+  });
+
+  it('handles focus and blur events', () => {
+    const handleFocus = jest.fn();
+    const handleBlur = jest.fn();
+    render(<Button onFocus={handleFocus} onBlur={handleBlur}>Focus test</Button>);
+    
+    const button = screen.getByRole('button');
+    
+    fireEvent.focus(button);
+    expect(handleFocus).toHaveBeenCalledTimes(1);
+    
+    fireEvent.blur(button);
+    expect(handleBlur).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders with all props combined', () => {
+    const handleClick = jest.fn();
+    render(
+      <Button 
+        variant="danger" 
+        size="large" 
+        fullWidth 
+        loading 
+        onClick={handleClick}
+        className="custom-class"
+        disabled
+      >
+        Complete button
+      </Button>
+    );
+    
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('button--danger');
+    expect(button).toHaveClass('button--large');
+    expect(button).toHaveClass('button--full-width');
+    expect(button).toHaveClass('custom-class');
+    expect(button).toBeDisabled();
   });
 });

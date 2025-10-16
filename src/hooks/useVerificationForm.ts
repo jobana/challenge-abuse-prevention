@@ -30,7 +30,6 @@ export const useVerificationForm = (initialData?: DecodedQueryParams) => {
     captchaToken,
     captchaError,
     resetCaptcha,
-    executeCaptcha,
     onCaptchaSuccess,
     onCaptchaExpired,
     onCaptchaError,

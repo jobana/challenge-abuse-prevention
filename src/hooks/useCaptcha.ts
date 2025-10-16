@@ -48,7 +48,7 @@ export const useCaptcha = () => {
 
   // Ejecutar el CAPTCHA manualmente
   const executeCaptcha = useCallback(async (): Promise<string | null> => {
-    if (!captchaState.isLoaded || !captchaRef.current) {
+    if (!captchaRef.current) {
       throw new Error(t('captcha.errors.notLoaded'));
     }
 
@@ -66,7 +66,7 @@ export const useCaptcha = () => {
       onCaptchaError(errorMessage);
       return null;
     }
-  }, [captchaState.isLoaded, onCaptchaSuccess, onCaptchaError, t]);
+  }, [onCaptchaSuccess, onCaptchaError, t]);
 
   // Resetear el CAPTCHA
   const resetCaptcha = useCallback(() => {
@@ -81,8 +81,6 @@ export const useCaptcha = () => {
     }));
   }, []);
 
-  // Verificar si el CAPTCHA está listo para usar
-  const isCaptchaReady = captchaState.isLoaded && !captchaState.error;
 
   // Obtener la clave pública del CAPTCHA desde las variables de entorno
   const getCaptchaSiteKey = (): string => {
